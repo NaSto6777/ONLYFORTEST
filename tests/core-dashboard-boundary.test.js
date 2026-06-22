@@ -26,7 +26,7 @@ test('public docs describe dashboard as Core-only remote service', () => {
     assert.match(docs, /official Core feature/i)
     assert.match(docs, /Local HTTP control panel/)
     assert.match(docs, /Remote web dashboard \| No \| Yes/)
-    assert.doesNotMatch(read('README.md'), /local dashboard/i)
+    assert.doesNotMatch(read('docs/README.md'), /local dashboard/i)
 })
 
 test('public Core plugin does not ship local license admin tooling', () => {
