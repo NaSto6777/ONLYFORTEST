@@ -1,0 +1,22 @@
+[
+    {
+        "email": "your-account@outlook.com",
+        "enabled": true,
+        "password": "your-password",
+        "totpSecret": "",
+        "recoveryEmail": "recovery@example.com",
+        "geoLocale": "US",
+        "langCode": "en",
+        "proxy": {
+            "proxyAxios": false,
+            "url": "",
+            "port": 0,
+            "username": "",
+            "password": ""
+        },
+        "saveFingerprint": {
+            "mobile": false,
+            "desktop": false
+        }
+    }
+]

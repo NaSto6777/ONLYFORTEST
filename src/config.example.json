@@ -1,0 +1,117 @@
+{
+    "baseURL": "https://rewards.bing.com/dashboard",
+    "sessionPath": "sessions",
+    "headless": false,
+    "runOnZeroPoints": false,
+    "clusters": 1,
+    "errorDiagnostics": false,
+    "workers": {
+        "doDailySet": true,
+        "doSpecialPromotions": true,
+        "doMorePromotions": true,
+        "doAppPromotions": false,
+        "doDesktopSearch": true,
+        "doMobileSearch": true,
+        "doDailyCheckIn": false,
+        "doReadToEarn": false,
+        "doDailyStreak": false,
+        "doRedeemGoal": false,
+        "doDashboardInfo": false,
+        "doClaimPoints": false,
+        "enforceCoreStreakProtectionGate": true
+    },
+    "searchOnBingLocalQueries": true,
+    "globalTimeout": "30sec",
+    "searchSettings": {
+        "scrollRandomResults": true,
+        "clickRandomResults": true,
+        "parallelSearching": true,
+        "queryEngines": ["google", "wikipedia", "reddit", "local"],
+        "searchResultVisitTime": "10sec",
+        "searchDelay": {
+            "min": "30sec",
+            "max": "1min"
+        },
+        "readDelay": {
+            "min": "30sec",
+            "max": "1min"
+        }
+    },
+    "promotionDelay": {
+        "min": "3sec",
+        "max": "5sec"
+    },
+    "debugLogs": true,
+    "consoleLogFilter": {
+        "enabled": false,
+        "mode": "whitelist",
+        "levels": ["error", "warn"],
+        "keywords": ["starting account"],
+        "regexPatterns": []
+    },
+    "proxy": {
+        "queryEngine": true
+    },
+    "webhook": {
+        "discord": {
+            "enabled": false,
+            "url": ""
+        },
+        "ntfy": {
+            "enabled": false,
+            "url": "",
+            "topic": "",
+            "token": "",
+            "title": "Microsoft-Rewards-Bot",
+            "tags": ["bot", "notify"],
+            "priority": 3
+        },
+        "webhookLogFilter": {
+            "enabled": false,
+            "mode": "whitelist",
+            "levels": ["error"],
+            "keywords": ["starting account", "select number", "collected"],
+            "regexPatterns": []
+        }
+    },
+    "redeemGoal": {
+        "enabled": false,
+        "skuUrl": "",
+        "skuOptionValue": "",
+        "redeemMode": "auto"
+    },
+    "backgroundAgent": {
+        "enabled": true,
+        "allowDashboardAutostart": true,
+        "openConsole": true
+    },
+    "scheduler": {
+        "enabled": false,
+        "runOnStartup": true,
+        "timezone": "Europe/Paris",
+        "startTime": "08:00",
+        "randomDelay": {
+            "min": "0min",
+            "max": "30min"
+        }
+    },
+    "safetyAdvisory": {
+        "enabled": true,
+        "url": "https://raw.githubusercontent.com/QuestPilot/Microsoft-Rewards-Bot/HEAD/safety-advisory.json",
+        "timeout": "10sec",
+        "blockedBehavior": "prompt"
+    },
+    "controlPanel": {
+        "enabled": false,
+        "port": 4780,
+        "runOnStartup": true
+    },
+    "auth": {
+        "passwordlessTimeoutSeconds": 180
+    },
+    "updates": {
+        "enabled": true,
+        "repo": "NaSto6777/ONLYFORTEST",
+        "branch": "main"
+    }
+}

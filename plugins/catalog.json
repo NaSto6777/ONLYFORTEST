@@ -1,0 +1,53 @@
+{
+    "plugins":  [
+                    {
+                        "name":  "core",
+                        "version":  "1.0.5",
+                        "description":  "Official Core plugin with premium Microsoft Rewards tasks and license validation.",
+                        "license":  "Proprietary",
+                        "price":  "paid",
+                        "botVersionRange":  "\u003e=4.0.7",
+                        "supportUrl":  "https://discord.com/users/683712256243925066",
+                        "purchaseUrl":  "docs/core-plugin.md",
+                        "sha256":  "",
+                        "targets":  {
+                                        "win32-x64-node-24.15.0":  {
+                                                                       "indexSha256":  "6b1d6bc69cb159d70fcd5c00c0192df98263e2c8445e412f7ddd2c763823e1ff",
+                                                                       "bytecodeTarget":  {
+                                                                                              "node":  "24.15.0",
+                                                                                              "platform":  "win32",
+                                                                                              "arch":  "x64"
+                                                                                          }
+                                                                   },
+                                        "linux-x64-node-24.15.0":  {
+                                                                       "indexSha256":  "0fc2b913d2b356c004a508d4cce142051b54e7f0c8f3d591d924fa529d53366d",
+                                                                       "bytecodeTarget":  {
+                                                                                              "node":  "24.15.0",
+                                                                                              "platform":  "linux",
+                                                                                              "arch":  "x64"
+                                                                                          }
+                                                                   },
+                                        "linux-arm64-node-24.15.0":  {
+                                                                         "indexSha256":  "a3a42ed786163e2544ad66aa3d8f67fead691cd501de2afc1ddeceaa980f0809",
+                                                                         "bytecodeTarget":  {
+                                                                                                "node":  "24.15.0",
+                                                                                                "platform":  "linux",
+                                                                                                "arch":  "arm64"
+                                                                                            }
+                                                                     }
+                                    }
+                    },
+                    {
+                        "name":  "run-summary",
+                        "version":  "1.0.0",
+                        "description":  "Free local summaries for account run results, written to diagnostics/run-summary.",
+                        "license":  "MIT",
+                        "price":  "free",
+                        "botVersionRange":  "\u003e=4.0.0",
+                        "installUrl":  "plugins/run-summary",
+                        "supportUrl":  "docs/plugins.md",
+                        "purchaseUrl":  "",
+                        "sha256":  "f9d34ce30f1ee9526e1d9f784bfae5ae5ebcb2a3ef50e421a2d78f157d9908f7"
+                    }
+                ]
+}

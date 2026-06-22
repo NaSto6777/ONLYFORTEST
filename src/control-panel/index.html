@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rewards Desk</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+    <div class="app">
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <div class="brand-icon" aria-hidden="true">
+                    <svg viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="22" stroke="currentColor" stroke-width="2"/><circle cx="17" cy="20" r="3" fill="currentColor"/><circle cx="31" cy="20" r="3" fill="currentColor"/><path d="M16 30c2 4 14 4 16 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M24 4v6M24 38v6M4 24h6M38 24h6" stroke="currentColor" stroke-width="1.5" opacity=".4"/></svg>
+                </div>
+                <div>
+                    <strong>Rewards Desk</strong>
+                    <span>local control panel</span>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <button class="nav-item active" data-tab="dashboard">
+                    <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10.5L12 3l9 7.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V10.5z"/></svg>
+                    Dashboard
+                </button>
+                <button class="nav-item" data-tab="accounts">
+                    <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+                    Accounts
+                    <span class="nav-badge" id="nav-pending">0</span>
+                </button>
+                <button class="nav-item" data-tab="console">
+                    <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M7 8h4M7 12h10"/></svg>
+                    Console
+                </button>
+                <button class="nav-item" data-tab="settings">
+                    <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+                    Settings
+                </button>
+                <button class="nav-item" data-tab="plugins">
+                    <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/></svg>
+                    Plugins
+                </button>
+                <button class="nav-item" data-tab="docs">
+                    <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4h9l5 5v11H6z"/><path d="M15 4v5h5"/></svg>
+                    Docs
+                </button>
+            </nav>
+
+            <div class="sidebar-actions">
+                <button id="btn-run" class="btn-run-now">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                    Run now
+                </button>
+                <button id="btn-stop" class="btn-stop-safe">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="1"/></svg>
+                    Stop safely
+                </button>
+                <div class="sidebar-status" id="sidebar-status">
+                    <span class="status-dot"></span>
+                    <span id="sidebar-status-text">Bot ready</span>
+                </div>
+                <a class="btn-discord" href="https://github.com/QuestPilot/Microsoft-Rewards-Bot/issues" target="_blank" rel="noopener">
+                    GitHub Support
+                </a>
+            </div>
+        </aside>
+
+        <div class="main-wrap">
+            <main class="content">
+                <!-- DASHBOARD -->
+                <section id="tab-dashboard" class="panel active">
+                    <div class="dash-hero">
+                        <div class="dash-hero-main">
+                            <div class="dash-hero-copy">
+                                <p class="dash-eyebrow">Microsoft Rewards Bot</p>
+                                <h1>Automate more. <em>Earn more.</em></h1>
+                                <p class="dash-lead">Local control panel — daily sets, searches, and promotions on autopilot.</p>
+                            </div>
+                            <div class="dash-hero-actions">
+                                <button type="button" id="btn-dash-run" class="btn btn-primary btn-hero-run">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                                    Run now
+                                </button>
+                                <button type="button" id="btn-dash-console" class="btn btn-ghost" data-goto="console">View console</button>
+                            </div>
+                        </div>
+                        <div class="dash-hero-art" aria-hidden="true">
+                            <div class="hero-glow"></div>
+                            <svg class="hero-bot" viewBox="0 0 200 200" fill="none">
+                                <circle cx="100" cy="100" r="70" stroke="url(#g1)" stroke-width="2" opacity=".6"/>
+                                <circle cx="100" cy="100" r="50" stroke="url(#g1)" stroke-width="1.5" opacity=".4"/>
+                                <rect x="65" y="70" width="70" height="60" rx="16" fill="url(#g2)" stroke="#4f8cff" stroke-width="2"/>
+                                <circle cx="82" cy="95" r="8" fill="#060810"/><circle cx="82" cy="95" r="4" fill="#4f8cff"/>
+                                <circle cx="118" cy="95" r="8" fill="#060810"/><circle cx="118" cy="95" r="4" fill="#4f8cff"/>
+                                <path d="M85 115 Q100 125 115 115" stroke="#4f8cff" stroke-width="2" stroke-linecap="round"/>
+                                <defs>
+                                    <linearGradient id="g1" x1="0" y1="0" x2="200" y2="200"><stop stop-color="#4f8cff"/><stop offset="1" stop-color="#7c5cff"/></linearGradient>
+                                    <linearGradient id="g2" x1="65" y1="70" x2="135" y2="130"><stop stop-color="#1a2840"/><stop offset="1" stop-color="#0f1419"/></linearGradient>
+                                </defs>
+                            </svg>
+                        </div>
+                    </div>
+
+                    <div id="dash-session-alert" class="dash-session-alert hidden" role="alert" aria-live="polite">
+                        <div class="dash-session-alert-icon" aria-hidden="true">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4M12 17h.01"/><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+                        </div>
+                        <div class="dash-session-alert-body">
+                            <strong id="dash-session-alert-title">Accounts need session cleared</strong>
+                            <p id="dash-session-alert-text">These accounts failed dashboard login. Clear session, then sign in again from Accounts.</p>
+                            <ul id="dash-session-alert-list" class="dash-session-alert-list"></ul>
+                        </div>
+                        <button type="button" id="dash-session-alert-go" class="btn btn-sm btn-primary">Open Accounts</button>
+                    </div>
+
+                    <div class="dash-stat-row">
+                        <article class="dash-stat-card">
+                            <span class="dash-stat-label">Points today</span>
+                            <strong class="dash-stat-value success" id="dash-stat-points">0</strong>
+                        </article>
+                        <article class="dash-stat-card">
+                            <span class="dash-stat-label">Pending</span>
+                            <strong class="dash-stat-value" id="dash-stat-pending">0</strong>
+                        </article>
+                        <article class="dash-stat-card">
+                            <span class="dash-stat-label">Done today</span>
+                            <strong class="dash-stat-value" id="dash-stat-done">0</strong>
+                        </article>
+                        <article class="dash-stat-card">
+                            <span class="dash-stat-label">Uptime</span>
+                            <strong class="dash-stat-value muted" id="dash-stat-uptime">—</strong>
+                        </article>
+                    </div>
+
+                    <div class="dash-controls card">
+                        <div class="dash-controls-row">
+                            <div class="dash-controls-label">
+                                <strong>Quick controls</strong>
+                                <span>Applied on next run</span>
+                            </div>
+                            <label class="toggle-switch" title="Toggle headless mode (hide browser windows)">
+                                <input type="checkbox" id="dash-headless">
+                                <span class="slider"></span>
+                                <span class="toggle-label" id="headless-label">Visible browsers</span>
+                            </label>
+                            <label class="inline-field">
+                                Clusters
+                                <button type="button" class="stepper-btn" id="clusters-down">−</button>
+                                <output id="dash-clusters-control">3</output>
+                                <button type="button" class="stepper-btn" id="clusters-up">+</button>
+                            </label>
+                            <span class="mode-badge" id="dash-mode-badge">3 clusters · visible</span>
+                            <button type="button" id="btn-dash-apply" class="btn btn-primary btn-sm">Apply</button>
+                        </div>
+                    </div>
+
+                    <div class="dash-main-grid">
+                        <article class="desk-card dash-status-card state-ready" id="dash-status-card">
+                            <div class="dash-card-top">
+                                <h3>Bot status</h3>
+                                <span class="dash-sched-pill" id="dash-sched-pill" hidden></span>
+                            </div>
+                            <div class="dash-status-body">
+                                <div class="status-ring" id="status-ring">
+                                    <svg viewBox="0 0 80 80">
+                                        <circle cx="40" cy="40" r="34" stroke="#243044" stroke-width="4" fill="none"/>
+                                        <circle cx="40" cy="40" r="34" stroke="url(#ringGrad)" stroke-width="4" fill="none" stroke-dasharray="180 40" stroke-linecap="round" class="ring-progress"/>
+                                        <path class="heartbeat" d="M22 42 L28 42 L32 34 L36 48 L40 38 L44 44 L48 42 L58 42" stroke="#4f8cff" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                                        <defs><linearGradient id="ringGrad"><stop stop-color="#4f8cff"/><stop offset="1" stop-color="#34d399"/></linearGradient></defs>
+                                    </svg>
+                                </div>
+                                <div class="dash-status-text">
+                                    <p class="status-title" id="dash-bot-status">Ready</p>
+                                    <p class="status-hint" id="dash-bot-hint">Click &ldquo;Run now&rdquo; to start farming.</p>
+                                </div>
+                            </div>
+                            <div class="dash-status-footer">
+                                <span>v<span id="dash-version">—</span></span>
+                                <span id="dash-uptime">—</span>
+                            </div>
+                        </article>
+
+                        <article class="desk-card dash-points-card">
+                            <h3>Today&rsquo;s progress</h3>
+                            <div class="dash-progress-wrap">
+                                <div class="progress-ring" id="dash-progress-ring">
+                                    <svg viewBox="0 0 120 120">
+                                        <circle cx="60" cy="60" r="52" stroke="#243044" stroke-width="8" fill="none"/>
+                                        <circle cx="60" cy="60" r="52" stroke="url(#progGrad)" stroke-width="8" fill="none" stroke-linecap="round" stroke-dasharray="327" stroke-dashoffset="327" class="progress-arc" id="dash-progress-arc"/>
+                                        <defs><linearGradient id="progGrad"><stop stop-color="#4f8cff"/><stop offset="1" stop-color="#22c55e"/></linearGradient></defs>
+                                    </svg>
+                                    <div class="progress-center">
+                                        <span class="points-big" id="dash-points">+0</span>
+                                        <span class="points-empty" id="points-empty">No runs yet</span>
+                                    </div>
+                                </div>
+                                <p class="points-subline" id="points-subline"></p>
+                            </div>
+                            <div class="points-sub">
+                                <div class="sub-stat"><span id="dash-pending">0</span><small>Pending</small></div>
+                                <div class="sub-stat"><span id="dash-finished">0</span><small>Done</small></div>
+                                <div class="sub-stat"><span id="dash-enabled">0</span><small>Enabled</small></div>
+                            </div>
+                        </article>
+                    </div>
+
+                    <article class="desk-card dash-workers-card" id="dash-workers-card">
+                        <div class="card-head-inline">
+                            <div>
+                                <h3>Workers</h3>
+                                <p class="accounts-count" id="dash-workers-summary">—</p>
+                            </div>
+                        </div>
+                        <div id="dash-workers-list" class="workers-live-list"></div>
+                    </article>
+
+                    <div class="dash-bottom-grid">
+                        <article class="desk-card dash-accounts-card">
+                            <div class="card-head-inline">
+                                <div>
+                                    <h3>Queue</h3>
+                                    <p class="accounts-count" id="dash-accounts-count"></p>
+                                    <p class="accounts-count dash-insights-hint" id="dash-insights-hint" hidden>Streak, level &amp; daily set shown after each run with Dashboard Info enabled.</p>
+                                </div>
+                                <button class="link-btn" data-goto="accounts">Manage all →</button>
+                            </div>
+                            <div id="dash-accounts-preview" class="account-preview-list"></div>
+                        </article>
+
+                        <article class="desk-card dash-runs-card">
+                            <div class="card-head-inline">
+                                <h3>Completed today</h3>
+                                <button class="link-btn" id="btn-refresh-runs">Refresh</button>
+                            </div>
+                            <div id="runs-today" class="runs-list"></div>
+                        </article>
+                    </div>
+                </section>
+
+                <!-- ACCOUNTS -->
+                <section id="tab-accounts" class="panel">
+                    <div class="page-header accounts-header">
+                        <div>
+                            <h2>Accounts</h2>
+                            <p>Manage accounts, run individually, open a live browser, or clear saved sessions.</p>
+                        </div>
+                        <p class="accounts-summary" id="accounts-summary"></p>
+                    </div>
+                    <div class="accounts-toolbar card">
+                        <div class="accounts-toolbar-left">
+                            <input type="search" id="account-search" placeholder="Search email…" class="search-input">
+                            <label class="filter-chip"><input type="checkbox" id="filter-pending"> Pending only</label>
+                        </div>
+                        <div class="accounts-toolbar-right">
+                            <button id="btn-enable-all" class="btn btn-sm btn-ghost">Enable all</button>
+                            <button id="btn-disable-all" class="btn btn-sm btn-ghost">Disable all</button>
+                        </div>
+                    </div>
+                    <div id="accounts-list" class="accounts-list"></div>
+                </section>
+
+                <!-- CONSOLE -->
+                <section id="tab-console" class="panel">
+                    <div class="page-header">
+                        <h2>Console</h2>
+                        <p>Live bot output — same stream as your terminal.</p>
+                    </div>
+                    <div class="log-toolbar card">
+                        <select id="log-level-filter"><option value="">All levels</option><option value="error">error</option><option value="warn">warn</option><option value="info">info</option><option value="debug">debug</option></select>
+                        <input type="search" id="log-account-filter" placeholder="Filter account…" class="search-input">
+                        <label class="chk-inline"><input type="checkbox" id="log-autoscroll" checked> Auto-scroll</label>
+                        <label class="chk-inline"><input type="checkbox" id="log-pause"> Pause</label>
+                        <button id="btn-clear-logs" class="btn btn-sm">Clear</button>
+                    </div>
+                    <pre id="log-terminal" class="log-terminal"></pre>
+                </section>
+
+                <!-- SETTINGS -->
+                <section id="tab-settings" class="panel">
+                    <div class="page-header settings-header">
+                        <div>
+                            <h2>Settings</h2>
+                            <p>Runtime, scheduler, search timing, workers, and console output.</p>
+                        </div>
+                        <p class="accounts-summary" id="settings-summary">Loading…</p>
+                    </div>
+
+                    <div class="settings-quick card">
+                        <div class="settings-quick-row">
+                            <div class="settings-quick-label">
+                                <strong>Quick apply</strong>
+                                <span>Changes take effect on the next run</span>
+                            </div>
+                            <label class="toggle-switch" title="Hide browser windows during farming">
+                                <input type="checkbox" id="quick-headless">
+                                <span class="slider"></span>
+                                <span class="toggle-label" id="quick-headless-label">Visible browsers</span>
+                            </label>
+                            <label class="inline-field">
+                                Clusters
+                                <button type="button" class="stepper-btn" id="settings-clusters-down">−</button>
+                                <output id="quick-clusters-val">3</output>
+                                <button type="button" class="stepper-btn" id="settings-clusters-up">+</button>
+                                <input type="range" id="quick-clusters" min="1" max="16" hidden>
+                            </label>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="quick-panel-startup">
+                                <span class="slider"></span>
+                                <span class="toggle-label">Auto-run on start</span>
+                            </label>
+                            <button id="btn-quick-save" class="btn btn-primary btn-sm">Apply now</button>
+                        </div>
+                    </div>
+
+                    <nav class="settings-nav" id="settings-nav">
+                        <button type="button" class="settings-nav-btn active" data-settings="runtime">Runtime</button>
+                        <button type="button" class="settings-nav-btn" data-settings="scheduler">Scheduler</button>
+                        <button type="button" class="settings-nav-btn" data-settings="search">Search</button>
+                        <button type="button" class="settings-nav-btn" data-settings="workers">Workers</button>
+                        <button type="button" class="settings-nav-btn" data-settings="logs">Console</button>
+                    </nav>
+
+                    <form id="settings-form">
+                        <div id="settings-runtime" class="settings-pane active">
+                            <div class="settings-card card">
+                                <div class="settings-card-head">
+                                    <div class="settings-card-icon runtime">⚙</div>
+                                    <div>
+                                        <h3>Browser runtime</h3>
+                                        <p>How the bot launches Chromium during automated runs.</p>
+                                    </div>
+                                </div>
+                                <div class="setting-rows">
+                                    <label class="setting-row">
+                                        <div class="setting-row-text">
+                                            <strong>Headless mode</strong>
+                                            <span>Run without visible browser windows</span>
+                                        </div>
+                                        <span class="toggle-switch compact"><input type="checkbox" id="cfg-headless"><span class="slider"></span></span>
+                                    </label>
+                                    <label class="setting-row">
+                                        <div class="setting-row-text">
+                                            <strong>Parallel clusters</strong>
+                                            <span>Accounts processed simultaneously (1–16)</span>
+                                        </div>
+                                        <div class="setting-row-control">
+                                            <button type="button" class="stepper-btn" id="cfg-clusters-down">−</button>
+                                            <input type="number" id="cfg-clusters" min="1" max="16" class="num-input">
+                                            <button type="button" class="stepper-btn" id="cfg-clusters-up">+</button>
+                                        </div>
+                                    </label>
+                                    <label class="setting-row">
+                                        <div class="setting-row-text">
+                                            <strong>Bing local queries</strong>
+                                            <span>Use locale-aware search terms from your geo setting</span>
+                                        </div>
+                                        <span class="toggle-switch compact"><input type="checkbox" id="cfg-bing-local"><span class="slider"></span></span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="settings-scheduler" class="settings-pane">
+                            <div class="settings-card card">
+                                <div class="settings-card-head">
+                                    <div class="settings-card-icon scheduler">⏱</div>
+                                    <div>
+                                        <h3>Daily scheduler</h3>
+                                        <p>Automatically trigger a run at a set time each day.</p>
+                                    </div>
+                                </div>
+                                <div class="setting-rows">
+                                    <label class="setting-row">
+                                        <div class="setting-row-text">
+                                            <strong>Scheduler enabled</strong>
+                                            <span>Run accounts on a daily schedule</span>
+                                        </div>
+                                        <span class="toggle-switch compact"><input type="checkbox" id="cfg-sched-enabled"><span class="slider"></span></span>
+                                    </label>
+                                    <label class="setting-row">
+                                        <div class="setting-row-text">
+                                            <strong>Run on bot startup</strong>
+                                            <span>Also farm immediately when the bot starts</span>
+                                        </div>
+                                        <span class="toggle-switch compact"><input type="checkbox" id="cfg-sched-startup"><span class="slider"></span></span>
+                                    </label>
+                                </div>
+                                <div class="settings-fields-grid">
+                                    <label class="field">
+                                        Timezone
+                                        <input type="text" id="cfg-sched-tz" placeholder="UTC">
+                                    </label>
+                                    <label class="field">
+                                        Start time
+                                        <input type="time" id="cfg-sched-time">
+                                    </label>
+                                </div>
+                                <p class="settings-hint" id="scheduler-next-hint"></p>
+                            </div>
+                        </div>
+
+                        <div id="settings-search" class="settings-pane">
+                            <div class="settings-card card">
+                                <div class="settings-card-head">
+                                    <div class="settings-card-icon search">🔍</div>
+                                    <div>
+                                        <h3>Search delays</h3>
+                                        <p>Pause between searches and article reads (in seconds).</p>
+                                    </div>
+                                </div>
+                                <div class="delay-grid">
+                                    <div class="delay-group">
+                                        <h4>Between searches</h4>
+                                        <div class="delay-pair">
+                                            <label class="field">Min (sec)<input type="number" id="cfg-search-min" min="1"></label>
+                                            <label class="field">Max (sec)<input type="number" id="cfg-search-max" min="1"></label>
+                                        </div>
+                                    </div>
+                                    <div class="delay-group">
+                                        <h4>Reading articles</h4>
+                                        <div class="delay-pair">
+                                            <label class="field">Min (sec)<input type="number" id="cfg-read-min" min="1"></label>
+                                            <label class="field">Max (sec)<input type="number" id="cfg-read-max" min="1"></label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="settings-logs" class="settings-pane">
+                            <div class="settings-card card">
+                                <div class="settings-card-head">
+                                    <div class="settings-card-icon logs">📋</div>
+                                    <div>
+                                        <h3>Console filter</h3>
+                                        <p>Choose which log levels appear in the Console tab.</p>
+                                    </div>
+                                </div>
+                                <div class="log-level-pills">
+                                    <label class="log-pill error"><input type="checkbox" data-log="error" class="log-filter"><span>error</span></label>
+                                    <label class="log-pill warn"><input type="checkbox" data-log="warn" class="log-filter"><span>warn</span></label>
+                                    <label class="log-pill info"><input type="checkbox" data-log="info" class="log-filter"><span>info</span></label>
+                                    <label class="log-pill debug"><input type="checkbox" data-log="debug" class="log-filter"><span>debug</span></label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="settings-savebar" id="settings-savebar">
+                            <span class="settings-savebar-hint">Unsaved changes in Runtime, Scheduler, Search, or Console</span>
+                            <button type="submit" class="btn btn-primary">Save settings</button>
+                        </div>
+                    </form>
+
+                    <div id="settings-workers" class="settings-pane">
+                        <div class="workers-toolbar card">
+                            <div>
+                                <h3>Farming workers</h3>
+                                <p>Toggle which tasks run during each account session.</p>
+                            </div>
+                            <div class="workers-toolbar-actions">
+                                <button type="button" id="btn-workers-all-on" class="btn btn-sm btn-ghost">Enable all</button>
+                                <button type="button" id="btn-workers-all-off" class="btn btn-sm btn-ghost">Disable all</button>
+                                <button type="button" id="btn-save-workers" class="btn btn-primary btn-sm">Save workers</button>
+                            </div>
+                        </div>
+                        <div class="worker-sections">
+                            <div class="settings-card card">
+                                <h3 class="worker-group-title">Promotions</h3>
+                                <div id="workers-promo" class="worker-grid"></div>
+                            </div>
+                            <div class="settings-card card">
+                                <h3 class="worker-group-title">Search &amp; streak</h3>
+                                <div id="workers-search" class="worker-grid"></div>
+                            </div>
+                            <div class="settings-card card">
+                                <h3 class="worker-group-title">Other</h3>
+                                <div id="workers-other" class="worker-grid"></div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- PLUGINS -->
+                <section id="tab-plugins" class="panel">
+                    <div class="page-header"><h2>Plugins</h2><p>Manage bot extensions locally.</p></div>
+                    <div class="card info-card">
+                        <h3>Plugin Desk</h3>
+                        <p>Open the separate Plugin Desk UI to enable or install plugins from the marketplace.</p>
+                        <a class="btn btn-primary" href="http://127.0.0.1:4777" target="_blank" rel="noopener">Open Plugin Desk →</a>
+                        <p class="hint" style="margin-top:1rem">Run <code>npm run plugins</code> if the link does not open.</p>
+                    </div>
+                </section>
+
+                <!-- DOCS -->
+                <section id="tab-docs" class="panel">
+                    <div class="page-header"><h2>Documentation</h2><p>Setup guides and reference.</p></div>
+                    <div class="docs-grid">
+                        <a class="card doc-link" href="https://github.com/QuestPilot/Microsoft-Rewards-Bot/blob/HEAD/docs/local-control-panel.md" target="_blank" rel="noopener"><h3>Control Panel</h3><p>Localhost setup &amp; security</p></a>
+                        <a class="card doc-link" href="https://github.com/QuestPilot/Microsoft-Rewards-Bot/blob/HEAD/docs/configuration.md" target="_blank" rel="noopener"><h3>Configuration</h3><p>config.json reference</p></a>
+                        <a class="card doc-link" href="https://github.com/QuestPilot/Microsoft-Rewards-Bot/blob/HEAD/docs/troubleshooting.md" target="_blank" rel="noopener"><h3>Troubleshooting</h3><p>Common fixes</p></a>
+                        <a class="card doc-link" href="https://github.com/QuestPilot/Microsoft-Rewards-Bot" target="_blank" rel="noopener"><h3>GitHub</h3><p>Source &amp; issues</p></a>
+                    </div>
+                </section>
+            </main>
+
+            <footer class="footer-bar">
+                <span class="footer-dot" id="conn-dot"></span>
+                <span id="conn-label">Bot ready</span>
+            </footer>
+        </div>
+    </div>
+
+    <div id="toast" class="toast hidden"></div>
+
+    <div id="passwordless-notice" class="passwordless-notice hidden" role="status" aria-live="assertive" aria-atomic="true">
+        <div class="passwordless-notice-glow" aria-hidden="true"></div>
+        <div class="passwordless-notice-inner">
+            <div class="passwordless-notice-head">
+                <span class="passwordless-notice-kicker">Microsoft Authenticator</span>
+                <span class="passwordless-notice-platform" id="passwordless-notice-platform">Desktop</span>
+            </div>
+            <div class="passwordless-notice-title">Approve sign-in</div>
+            <div class="passwordless-notice-account" id="passwordless-notice-email">account@example.com</div>
+            <div class="passwordless-notice-number-box">
+                <span class="passwordless-notice-number-label">Select this number</span>
+                <span class="passwordless-notice-number" id="passwordless-notice-number">84</span>
+            </div>
+            <div class="passwordless-notice-footer">
+                <span class="passwordless-notice-hint">Use this number in your Authenticator app</span>
+                <span class="passwordless-notice-countdown" id="passwordless-notice-countdown">180s</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="passwordless-modal" class="modal-overlay passwordless-overlay hidden" role="alertdialog" aria-labelledby="passwordless-title" aria-modal="true">
+        <div class="modal-card passwordless-card">
+            <header class="modal-header passwordless-header">
+                <div>
+                    <h2 id="passwordless-title">Approve sign-in</h2>
+                    <p class="modal-sub">Open Microsoft Authenticator on your phone and tap the matching number.</p>
+                </div>
+                <span class="passwordless-badge" id="passwordless-platform">Desktop</span>
+            </header>
+            <div class="passwordless-body">
+                <p class="passwordless-account" id="passwordless-email">account@example.com</p>
+                <div class="passwordless-number-wrap">
+                    <span class="passwordless-number-label">Select this number</span>
+                    <div class="passwordless-number" id="passwordless-number">84</div>
+                </div>
+                <p class="passwordless-hint" id="passwordless-hint">Waiting for approval on your device…</p>
+                <p class="passwordless-countdown" id="passwordless-countdown">180s remaining</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="run-modal" class="modal-overlay hidden" role="dialog" aria-labelledby="run-modal-title" aria-modal="true">
+        <div class="modal-card run-modal-card">
+            <header class="modal-header">
+                <div>
+                    <h2 id="run-modal-title">Start run</h2>
+                    <p class="modal-sub" id="run-modal-sub">Choose which accounts to farm this run.</p>
+                </div>
+                <button type="button" class="modal-close" id="run-modal-close" aria-label="Close">&times;</button>
+            </header>
+            <div class="run-modal-toolbar">
+                <input type="search" id="run-modal-search" placeholder="Search accounts…" class="search-input" autocomplete="off">
+                <div class="run-modal-quick">
+                    <button type="button" id="run-modal-pending" class="btn btn-sm btn-ghost">Pending</button>
+                    <button type="button" id="run-modal-enabled" class="btn btn-sm btn-ghost">All enabled</button>
+                    <button type="button" id="run-modal-all" class="btn btn-sm btn-ghost">Select all</button>
+                    <button type="button" id="run-modal-none" class="btn btn-sm btn-ghost">Clear</button>
+                </div>
+            </div>
+            <p class="run-modal-hint" id="run-modal-hint">Completed and search-limited accounts can be included — check them to re-run. With the toggle on, the bot clears the limit flag, retries searches, and re-checks whether Bing still blocks the account.</p>
+            <label class="run-modal-option toggle-switch" title="Retry Bing searches on flagged accounts and re-check if the search limit is still active">
+                <input type="checkbox" id="run-modal-ignore-tempban">
+                <span class="slider"></span>
+                <span class="toggle-label">Don't skip search-limited accounts</span>
+            </label>
+            <div class="run-modal-list" id="run-modal-list"></div>
+            <footer class="modal-footer">
+                <span class="run-modal-count" id="run-modal-count">0 selected</span>
+                <div class="modal-actions">
+                    <button type="button" id="run-modal-cancel" class="btn btn-ghost">Cancel</button>
+                    <button type="button" id="run-modal-start" class="btn btn-primary" disabled>Start run</button>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <script src="/app.js"></script>
+</body>
+</html>

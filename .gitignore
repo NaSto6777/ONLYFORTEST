@@ -1,0 +1,54 @@
+# Dependencies & build output
+node_modules/
+dist/
+release/
+.dev/
+
+# User data — never commit
+sessions/
+.msrb/
+.core/
+Page/
+logs/
+diagnostics/
+src/accounts.json
+src/accounts.json.bak
+src/config.json
+accounts.dev.json
+accounts.main.json
+plugins/plugins.jsonc
+license-admin.config.local.js
+plugins/core/license-admin.config.local.js
+
+# Updater / tooling caches
+.updates/
+.tools/
+.plugins-marketplace*.log
+.playwright-chromium-installed
+
+# OS / editor
+.DS_Store
+/.vscode
+.stfolder/
+note
+
+# Plugin build artifacts
+plugins/*/dist/
+plugins/*/build/
+plugins/*/coverage/
+plugins/*/.cache/
+plugins/*/node_modules/
+plugins/core-source/
+core-source/
+*.jsc.map
+
+# Lockfiles (optional local)
+bun.lock
+
+# Env / secrets
+.env
+.env.*
+*.pem
+*.key
+*credentials*
+*secrets*

@@ -1,0 +1,122 @@
+import ms, { StringValue } from 'ms'
+
+export default class Helpers {
+    private randomDelayMultiplier = 1
+
+    async wait(time: number | string): Promise<void> {
+        if (typeof time === 'string') {
+            time = this.stringToNumber(time)
+        }
+
+        return new Promise<void>(resolve => {
+            setTimeout(resolve, time)
+        })
+    }
+
+    getFormattedDate(ms = Date.now()): string {
+        const today = new Date(ms)
+        const month = String(today.getMonth() + 1).padStart(2, '0') // January is 0
+        const day = String(today.getDate()).padStart(2, '0')
+        const year = today.getFullYear()
+
+        return `${month}/${day}/${year}`
+    }
+
+    shuffleArray<T>(array: T[]): T[] {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1))
+
+            const a = array[i]
+            const b = array[j]
+
+            if (a === undefined || b === undefined) continue
+
+            array[i] = b
+            array[j] = a
+        }
+
+        return array
+    }
+
+    randomNumber(min: number, max: number): number {
+        return Math.floor(Math.random() * (max - min + 1)) + min
+    }
+
+    chunkArray<T>(arr: T[], numChunks: number): T[][] {
+        if (numChunks <= 0 || arr.length === 0) {
+            return []
+        }
+
+        const effectiveChunks = Math.min(numChunks, arr.length)
+        const baseSize = Math.floor(arr.length / effectiveChunks)
+        const remainder = arr.length % effectiveChunks
+        const chunks: T[][] = []
+        let offset = 0
+
+        for (let i = 0; i < effectiveChunks; i++) {
+            const size = baseSize + (i >= effectiveChunks - remainder ? 1 : 0)
+            chunks.push(arr.slice(offset, offset + size))
+            offset += size
+        }
+
+        return chunks
+    }
+
+    stringToNumber(input: string | number): number {
+        if (typeof input === 'number') {
+            return input
+        }
+        const value = input.trim()
+
+        const milisec = ms(value as StringValue)
+
+        if (milisec === undefined) {
+            throw new Error(
+                `The input provided (${input}) cannot be parsed to a valid time! Use a format like "1 min", "1m" or "1 minutes"`
+            )
+        }
+
+        return milisec
+    }
+
+    normalizeString(string: string): string {
+        return string
+            .normalize('NFD')
+            .trim()
+            .toLowerCase()
+            .replace(/[^\x20-\x7E]/g, '')
+            .replace(/[?!]/g, '')
+    }
+
+    getEmailUsername(email: string): string {
+        return email.split('@')[0] ?? 'Unknown'
+    }
+
+    randomDelay(min: string | number, max: string | number): number {
+        const minMs = typeof min === 'number' ? min : this.stringToNumber(min)
+        const maxMs = typeof max === 'number' ? max : this.stringToNumber(max)
+        return Math.floor(this.randomNumber(minMs, maxMs) * this.randomDelayMultiplier)
+    }
+
+    setRandomDelayMultiplier(multiplier: number): void {
+        if (!Number.isFinite(multiplier) || multiplier < 1) {
+            this.randomDelayMultiplier = 1
+            return
+        }
+
+        this.randomDelayMultiplier = multiplier
+    }
+
+    /**
+     * Returns a randomized per-keystroke delay to simulate human typing.
+     * Real humans type at ~30-80ms per keystroke with occasional pauses.
+     * This returns a function that produces a different delay for each call.
+     */
+    humanTypeDelay(): number {
+        // Base typing speed 35-75ms with occasional micro-pauses (100-200ms, ~15% chance)
+        if (Math.random() < 0.15) {
+            return this.randomNumber(100, 200)
+        }
+        return this.randomNumber(35, 75)
+    }
+}

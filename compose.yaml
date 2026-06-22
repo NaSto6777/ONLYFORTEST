@@ -1,0 +1,29 @@
+services:
+    microsoft-rewards-bot:
+        image: microsoft-rewards-bot
+        container_name: microsoft-rewards-bot
+        restart: unless-stopped
+        build:
+            context: .
+            dockerfile: Dockerfile
+        entrypoint: ["/usr/local/bin/entrypoint.sh"]
+        command: ["node", "dist/index.js"]
+        volumes:
+            - ./src/accounts.json:/usr/src/microsoft-rewards-bot/dist/accounts.json:ro
+            - ./src/config.json:/usr/src/microsoft-rewards-bot/dist/config.json:ro
+            - ./plugins/plugins.jsonc:/usr/src/microsoft-rewards-bot/plugins/plugins.jsonc:ro
+            - ./sessions:/usr/src/microsoft-rewards-bot/sessions
+        environment:
+            TZ: 'America/Toronto'
+            NODE_ENV: 'production'
+            CRON_SCHEDULE: '0 7 * * *'
+            RUN_ON_START: 'true'
+            SKIP_RANDOM_SLEEP: 'true'
+        healthcheck:
+            test: ['CMD', 'sh', '-c', 'pgrep node > /dev/null || exit 1']
+            interval: 60s
+            timeout: 10s
+            retries: 3
+            start_period: 30s
+        security_opt:
+            - no-new-privileges:true

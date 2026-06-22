@@ -1,0 +1,134 @@
+# Official Core Plugin
+
+Navigation: [Documentation index](./README.md) -> [Plugin system overview](./plugins.md) -> [Core technical reference](./core-plugin-reference.md) -> [Core Dashboard](./dashboard.md)
+
+Core is the premium layer for Microsoft Rewards Bot. The open-source bot handles the essential workflow; Core adds the maintained automation, remote dashboard, and background agent experience for users who want the bot to feel installed, monitored, and controllable instead of just running in a terminal.
+
+## Why Core
+
+Core is built for users who want:
+
+- broader Rewards coverage when Microsoft changes dashboard surfaces;
+- a remote dashboard to monitor machines, runs, accounts, versions, and logs;
+- Windows/Linux background startup without keeping a terminal open;
+- Docker-compatible Core support on the official Linux x64 Node.js target;
+- safe remote commands such as run now, stop safely, open console, and restart agent;
+- encrypted local account editing from the dashboard without storing secrets on the server.
+
+Core is especially useful for desktop users who do not want to understand terminals. Once configured, the bot can start silently with the computer, appear in the dashboard, and wait for scheduler runs or manual dashboard commands.
+
+## Open Source vs Core
+
+| Capability | Open source | Official Core |
+| --- | --- | --- |
+| Bing searches | Yes | Yes |
+| Daily Set | Limited | Full maintained coverage |
+| Simple activities and quizzes | Yes | Yes |
+| Claimable point cards | No | Yes |
+| Daily streak details | No | Yes |
+| Streak protection sync | No | Yes |
+| App rewards | No | Yes |
+| Redeem goal automation | No | Yes |
+| Temporary quest pages | No | Best effort |
+| Remote dashboard | No | Yes |
+| Background agent | No | Yes |
+| Dashboard account editor | No | Yes, encrypted to the local bot |
+| Docker Core support | No | Yes, Linux x64 Node.js `24.15.0` |
+
+## Remote Dashboard
+
+Core includes the official remote dashboard. The bot opens an outbound connection to the dashboard service; it does not expose a local web server on the user's network.
+
+From the dashboard, users can:
+
+- see every connected Core device;
+- keep offline devices visible for up to 30 days;
+- inspect the last known state of a machine after it shuts down;
+- follow filtered live logs;
+- see app version, Core version, platform, Docker status, and update warnings;
+- run the bot remotely when idle;
+- stop safely after the current account;
+- install or remove Windows/Linux auto-start;
+- open or attach to a visible console;
+- apply safe config overrides;
+- edit local accounts through encrypted commands;
+- request a sanitized diagnostics bundle.
+
+The dashboard is tied to a valid Core license and Discord login.
+
+## Background Agent
+
+Core can run as a quiet background agent:
+
+```bash
+npm start -- --background
+```
+
+The agent connects to the dashboard and waits. It does not start a rewards run by itself unless the built-in scheduler is enabled. This keeps the machine visible while avoiding unnecessary work.
+
+Users who want to see the terminal can attach to the running instance:
+
+```bash
+npm start -- --attach
+```
+
+On Windows, the dashboard can open a visible console for the running agent. On Linux, it shows the attach command. In Docker, users should use `docker logs -f <container>`.
+
+## Auto-Start
+
+Core can install auto-start from the dashboard:
+
+- Windows: user Task Scheduler task at logon.
+- Linux: `systemd --user` service.
+- Docker: no local mutation; use the container restart policy.
+
+If another bot instance is already running, a new interactive `npm start` reports it and can close the old instance before continuing. Background launches simply exit and leave the running agent untouched.
+
+## Security Model
+
+Core sends only sanitized live state to the dashboard:
+
+- masked account emails;
+- run state, uptime, versions, platform, and auto-start status;
+- filtered recent logs;
+- scheduler and worker summaries;
+- point summaries and supported diagnostics.
+
+Core must never send Microsoft account passwords, cookies, access tokens, proxy credentials, webhook URLs, or the full local config in readable form.
+
+Account edits and safe config overrides are encrypted in the browser for the selected device. Redis and Core-API transport the command but cannot read the secret payload. The local bot decrypts, validates, writes local files, and reports only masked state back to the dashboard.
+
+## What Core Does Not Promise
+
+Microsoft Rewards varies by country, account, available offers, account level, and time. Core improves coverage and maintenance, but it does not guarantee a fixed monthly value.
+
+Some dashboard cards are passive progress, external offers, app-only actions, subscriptions, sweepstakes, redeem pages, or time-gated campaigns. Core may detect or report those cards, but not every visible item is a normal automatable web task.
+
+## Buy Core
+
+To buy or renew Core access, contact `@lightzirconite` / `683712256243925066` by private Discord message.
+
+Accepted payment methods:
+
+- PayPal
+- gift cards accepted by the maintainer
+
+Xbox and PlayStation gift cards are not accepted.
+
+After payment, you receive a license key. Enable the preinstalled Core plugin in `plugins/plugins.jsonc`, start the bot, and enter the key when prompted.
+
+```jsonc
+"core": {
+  "enabled": true,
+  "priority": 100
+}
+```
+
+For Docker, set `LICENSE_KEY` in the container environment so Core can validate the license without an interactive prompt.
+
+## Learn More
+
+- [Core Dashboard](./dashboard.md) explains the remote dashboard and background agent.
+- [Core technical reference](./core-plugin-reference.md) documents coverage, security boundaries, and release rules.
+- [Docker](./docker.md) documents the supported Core Docker target.
+- [Node.js version](./node-version.md) explains why Core requires an exact Node.js version.
