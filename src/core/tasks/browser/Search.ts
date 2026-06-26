@@ -413,18 +413,6 @@ export class Search extends TaskBase {
         return blockInfo.blocked && blockInfo.reason === 'Bing sign-in required'
     }
 
-    private logBingPageWarning(blockInfo: BingSearchBlockInfo, isMobile: boolean): void {
-        if (!blockInfo.blocked) {
-            return
-        }
-
-        this.bot.logger.warn(
-            isMobile,
-            'SEARCH-BING',
-            `Bing page warning (not an instant search ban): ${blockInfo.reason} | url=${blockInfo.url}`
-        )
-    }
-
     private async ensureBingSearchContext(page: Page, isMobile: boolean): Promise<void> {
         let host = ''
         try {
@@ -491,7 +479,6 @@ export class Search extends TaskBase {
                         blocked: true
                     }
                 }
-                this.logBingPageWarning(blockInfo, isMobile)
 
                 const searchBox = await this.resolveSearchBox(searchPage)
                 const searchSelector =
@@ -565,9 +552,6 @@ export class Search extends TaskBase {
                         counters: await this.bot.browser.func.getSearchPoints(),
                         blocked: true
                     }
-                }
-                if (blockInfo?.blocked) {
-                    this.logBingPageWarning(blockInfo, isMobile)
                 }
 
                 if (i >= maxAttempts - 1) {
