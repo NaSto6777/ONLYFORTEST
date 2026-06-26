@@ -36,7 +36,7 @@ import { findAccountBySelector, findAccountsBySelector, getCliAccountSelector } 
 import { getAccountsFinishedToday, recordAccountRun } from './helpers/AccountRunLedger'
 import { clearAccountStaleSession } from './helpers/AccountTempBanLedger'
 import { maybeRecordStaleSession } from './helpers/AccountSessionIssues'
-import { saveAccountDashboardSnapshot } from './helpers/AccountDashboardSnapshotLedger'
+import { getAccountDashboardSnapshot, saveAccountDashboardSnapshot } from './helpers/AccountDashboardSnapshotLedger'
 import {
     renderRunEndBanner,
     renderRunPlan,
@@ -141,6 +141,7 @@ export class MicrosoftRewardsBot {
     public agentRuntime: AgentRuntime = new AgentRuntime()
 
     private desktopViewerSessions = new Map<string, BrowserContext>()
+    private mobileViewerSessions = new Map<string, BrowserContext>()
 
     private clusterWorkerId = 1
     private clusterWorkerLocalCompleted = 0
@@ -232,7 +233,39 @@ export class MicrosoftRewardsBot {
         return this.desktopViewerSessions.has(email.toLowerCase())
     }
 
+    isMobileSessionOpen(email: string): boolean {
+        return this.mobileViewerSessions.has(email.toLowerCase())
+    }
+
+    isViewerSessionOpen(email: string): boolean {
+        const key = email.toLowerCase()
+        return this.desktopViewerSessions.has(key) || this.mobileViewerSessions.has(key)
+    }
+
+    getViewerSessionPlatform(email: string): 'desktop' | 'mobile' | null {
+        const key = email.toLowerCase()
+        if (this.mobileViewerSessions.has(key)) {
+            return 'mobile'
+        }
+        if (this.desktopViewerSessions.has(key)) {
+            return 'desktop'
+        }
+        return null
+    }
+
     async openDesktopSession(email: string, target: 'rewards' | 'bing' = 'rewards'): Promise<void> {
+        return this.openViewerSession(email, 'desktop', target)
+    }
+
+    async openMobileSession(email: string, target: 'rewards' | 'bing' = 'rewards'): Promise<void> {
+        return this.openViewerSession(email, 'mobile', target)
+    }
+
+    private async openViewerSession(
+        email: string,
+        platform: 'desktop' | 'mobile',
+        target: 'rewards' | 'bing' = 'rewards'
+    ): Promise<void> {
         if (this.dashboardRunState === 'running' || this.dashboardRunState === 'checking') {
             throw new Error('Stop the current run before opening a browser session')
         }
@@ -243,13 +276,21 @@ export class MicrosoftRewardsBot {
         }
 
         const key = account.email.toLowerCase()
-        if (this.desktopViewerSessions.has(key)) {
-            throw new Error('Desktop session already open for this account')
+        if (this.isViewerSessionOpen(key)) {
+            const openPlatform = this.getViewerSessionPlatform(key)
+            throw new Error(
+                openPlatform
+                    ? `${openPlatform === 'mobile' ? 'Mobile' : 'Desktop'} session already open for this account`
+                    : 'Browser session already open for this account'
+            )
         }
 
-        this.logger.info('main', 'DESKTOP-VIEWER', `Opening visible browser for ${account.email}`)
+        const logTag = platform === 'mobile' ? 'MOBILE-VIEWER' : 'DESKTOP-VIEWER'
+        this.logger.info('main', logTag, `Opening visible ${platform} browser for ${account.email}`)
 
-        void executionContext.run({ isMobile: false, account }, async () => {
+        const sessions = platform === 'mobile' ? this.mobileViewerSessions : this.desktopViewerSessions
+
+        void executionContext.run({ isMobile: platform === 'mobile', account }, async () => {
             try {
                 const session = await this.browserFactory.createBrowser(account, { headless: false })
                 const page = await session.context.newPage()
@@ -259,36 +300,50 @@ export class MicrosoftRewardsBot {
                         : this.config.baseURL
                 await page.goto(openUrl, { waitUntil: 'domcontentloaded', timeout: 30000 }).catch(() => {})
 
-                this.desktopViewerSessions.set(key, session.context)
+                sessions.set(key, session.context)
                 this.logger.info(
                     'main',
-                    'DESKTOP-VIEWER',
+                    logTag,
                     target === 'bing'
                         ? `Bing sign-in browser ready for ${account.email} — sign in manually, then close the window`
-                        : `Browser ready for ${account.email} — close the window when finished`
+                        : `${platform === 'mobile' ? 'Mobile' : 'Desktop'} browser ready for ${account.email} — close the window when finished`
                 )
 
                 session.context.on('close', () => {
-                    this.desktopViewerSessions.delete(key)
-                    this.logger.info('main', 'DESKTOP-VIEWER', `Browser closed for ${account.email}`)
+                    sessions.delete(key)
+                    this.logger.info('main', logTag, `Browser closed for ${account.email}`)
                 })
             } catch (error) {
-                this.desktopViewerSessions.delete(key)
+                sessions.delete(key)
                 const message = error instanceof Error ? error.message : String(error)
-                this.logger.error('main', 'DESKTOP-VIEWER', `Failed to open browser for ${account.email}: ${message}`)
+                this.logger.error('main', logTag, `Failed to open browser for ${account.email}: ${message}`)
             }
         })
     }
 
     async closeDesktopSession(email: string): Promise<void> {
+        return this.closeViewerSession(email, 'desktop')
+    }
+
+    async closeMobileSession(email: string): Promise<void> {
+        return this.closeViewerSession(email, 'mobile')
+    }
+
+    async closeViewerSession(email: string, platform?: 'desktop' | 'mobile'): Promise<void> {
         const key = email.toLowerCase()
-        const context = this.desktopViewerSessions.get(key)
+        const resolvedPlatform = platform ?? this.getViewerSessionPlatform(key)
+        if (!resolvedPlatform) {
+            throw new Error('No open browser session for this account')
+        }
+
+        const sessions = resolvedPlatform === 'mobile' ? this.mobileViewerSessions : this.desktopViewerSessions
+        const context = sessions.get(key)
         if (!context) {
-            throw new Error('No open desktop session for this account')
+            throw new Error(`No open ${resolvedPlatform} session for this account`)
         }
 
         await context.close().catch(() => undefined)
-        this.desktopViewerSessions.delete(key)
+        sessions.delete(key)
     }
 
     async initialize(): Promise<void> {
@@ -1019,7 +1074,14 @@ export class MicrosoftRewardsBot {
                     email: accountEmail,
                     success: true,
                     completedAt: new Date().toISOString(),
-                    collectedPoints
+                    collectedPoints,
+                    initialPoints: accountInitialPoints,
+                    finalPoints: accountFinalPoints,
+                    durationSeconds: parseFloat(durationSeconds),
+                    level:
+                        getAccountDashboardSnapshot(accountEmail)?.level ??
+                        this.userData.dashboardInfo?.level ??
+                        null
                 })
                 clearAccountStaleSession(accountEmail)
 
@@ -1043,6 +1105,14 @@ export class MicrosoftRewardsBot {
                 error: 'Flow failed'
             }
             await this.pluginManager.notifyAccountEnd(accountEmail, failedResult)
+            recordAccountRun({
+                email: accountEmail,
+                success: false,
+                completedAt: new Date().toISOString(),
+                collectedPoints: 0,
+                durationSeconds: parseFloat(durationSeconds),
+                level: getAccountDashboardSnapshot(accountEmail)?.level ?? this.userData.dashboardInfo?.level ?? null
+            })
             return failedResult
         } catch (error) {
             const durationSeconds = ((Date.now() - accountStartTime) / 1000).toFixed(1)
@@ -1063,6 +1133,14 @@ export class MicrosoftRewardsBot {
             )
 
             await this.pluginManager.notifyAccountEnd(accountEmail, failedResult)
+            recordAccountRun({
+                email: accountEmail,
+                success: false,
+                completedAt: new Date().toISOString(),
+                collectedPoints: 0,
+                durationSeconds: parseFloat(durationSeconds),
+                level: getAccountDashboardSnapshot(accountEmail)?.level ?? null
+            })
             return failedResult
         }
     }

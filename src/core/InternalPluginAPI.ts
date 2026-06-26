@@ -79,6 +79,7 @@ export interface TemporaryPunchcardsResult {
 export interface DashboardInfo {
     userName: string | null
     level: string | null
+    levelKey: string | null
     availablePoints: number | null
     readyToClaimPoints: number
     claimEntries: ClaimEntry[]

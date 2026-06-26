@@ -98,6 +98,7 @@ export class DashboardInfoCollector extends TaskBase {
         return {
             userName: this.bot.userData.userName || null,
             level: levelInfo?.activeLevelName || levelInfo?.activeLevel || data.userProfile?.attributes?.level || null,
+            levelKey: levelInfo?.activeLevel || null,
             availablePoints: data.userStatus?.availablePoints ?? null,
             readyToClaimPoints: 0,
             claimEntries: [],
@@ -222,6 +223,7 @@ export class DashboardInfoCollector extends TaskBase {
         return {
             userName: this.bot.userData.userName || null,
             level: null,
+            levelKey: null,
             availablePoints: null,
             readyToClaimPoints: 0,
             claimEntries: [],
