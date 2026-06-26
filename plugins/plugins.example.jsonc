@@ -1,0 +1,21 @@
+{
+    // Plugin configuration — copied to plugins.jsonc on first start if missing.
+    // Only plugins listed here are loaded when this file exists.
+    //
+    // Core is optional (paid). Keep "enabled": false unless you have a license key.
+
+    "core": {
+        "enabled": false,
+        "priority": 100
+    },
+
+    "run-summary": {
+        "enabled": false,
+        "priority": 40,
+        "config": {
+            "outputDir": "diagnostics/run-summary",
+            "includeEmails": false,
+            "writeMarkdown": true
+        }
+    }
+}

@@ -3,6 +3,23 @@ const path = require('path')
 
 const projectRoot = path.resolve(__dirname, '..')
 
+function ensurePluginsConfig() {
+    const targetPath = path.join(projectRoot, 'plugins', 'plugins.jsonc')
+    if (fs.existsSync(targetPath)) {
+        return
+    }
+
+    const examplePath = path.join(projectRoot, 'plugins', 'plugins.example.jsonc')
+    if (!fs.existsSync(examplePath)) {
+        console.warn('\x1b[33m[CONFIG]\x1b[0m plugins/plugins.example.jsonc is missing — Core may load without plugins.jsonc')
+        return
+    }
+
+    fs.mkdirSync(path.dirname(targetPath), { recursive: true })
+    fs.copyFileSync(examplePath, targetPath)
+    console.log('\x1b[36m[CONFIG]\x1b[0m Created plugins/plugins.jsonc from plugins.example.jsonc (Core disabled)')
+}
+
 function validateJsonFile(relativePath, label) {
     const filePath = path.join(projectRoot, relativePath)
 
@@ -42,5 +59,6 @@ function validateJsonFile(relativePath, label) {
     }
 }
 
+ensurePluginsConfig()
 validateJsonFile('src/accounts.json', 'accounts')
 validateJsonFile('src/config.json', 'config')

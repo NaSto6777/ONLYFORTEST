@@ -9,6 +9,17 @@ export interface AccountRunEntry {
     success: boolean
     completedAt: string
     collectedPoints?: number
+    initialPoints?: number
+    finalPoints?: number
+    durationSeconds?: number
+    level?: string | null
+}
+
+export interface AccountRunStats {
+    runs: number
+    collectedPoints: number
+    avgDurationSeconds: number | null
+    lastRun: AccountRunEntry | null
 }
 
 function todayKey(date = new Date()): string {
@@ -86,4 +97,29 @@ export function getRunsToday(cwd = process.cwd()): AccountRunEntry[] {
     }
 
     return entries
+}
+
+function normalizeEmail(email: string): string {
+    return email.toLowerCase()
+}
+
+export function getRunsForAccountToday(email: string, cwd = process.cwd()): AccountRunEntry[] {
+    const key = normalizeEmail(email)
+    return getRunsToday(cwd).filter(run => normalizeEmail(run.email) === key)
+}
+
+export function getAccountRunStatsToday(email: string, cwd = process.cwd()): AccountRunStats {
+    const runs = getRunsForAccountToday(email, cwd)
+    const collectedPoints = runs.reduce((sum, run) => sum + (run.collectedPoints ?? 0), 0)
+    const durations = runs.map(run => run.durationSeconds).filter((value): value is number => typeof value === 'number')
+    const avgDurationSeconds = durations.length
+        ? durations.reduce((sum, value) => sum + value, 0) / durations.length
+        : null
+
+    return {
+        runs: runs.length,
+        collectedPoints,
+        avgDurationSeconds,
+        lastRun: runs.length ? runs[runs.length - 1] ?? null : null
+    }
 }

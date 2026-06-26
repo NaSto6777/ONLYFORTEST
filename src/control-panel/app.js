@@ -284,19 +284,58 @@
         if (dot) dot.className = 'footer-dot' + dotClass
         if ($('conn-label')) $('conn-label').textContent = running ? 'Bot running' : label === 'Ready' ? 'Bot ready' : label
         updateDashboardRunButtons(running)
-        document.querySelectorAll('.icon-btn.run, .icon-btn.open').forEach(btn => { btn.disabled = running })
+        document.querySelectorAll('.icon-btn.run, .icon-btn.open, .icon-btn.open-mobile').forEach(btn => { btn.disabled = running })
+    }
+
+    function formatDuration(seconds) {
+        if (seconds === null || seconds === undefined || Number.isNaN(seconds)) return ''
+        const total = Math.max(0, Math.round(Number(seconds)))
+        if (total < 60) return total + 's'
+        const mins = Math.floor(total / 60)
+        const secs = total % 60
+        return secs ? mins + 'm ' + secs + 's' : mins + 'm'
+    }
+
+    function formatPoints(value) {
+        if (value === null || value === undefined) return '—'
+        return Number(value).toLocaleString()
+    }
+
+    function formatLevelChangeHtml(change) {
+        if (!change) return ''
+        const arrow = change.direction === 'up' ? '↑' : '↓'
+        const cls = change.direction === 'up' ? 'level-up' : 'level-down'
+        const title = change.direction === 'up' ? 'Level upgraded' : 'Level downgraded'
+        return (
+            '<span class="acc-insight-pill ' + cls + '" title="' + escapeHtml(title) + '">' +
+            arrow + ' ' + escapeHtml(change.fromLevel) + ' → ' + escapeHtml(change.toLevel) +
+            '</span>'
+        )
     }
 
     function formatDashboardStatsHtml(stats) {
         if (!stats || !dashboardInfoEnabled) return ''
 
         const pills = []
+        if (stats.availablePoints !== null && stats.availablePoints !== undefined) {
+            pills.push(
+                '<span class="acc-insight-pill points" title="Available Rewards points">' +
+                formatPoints(stats.availablePoints) + ' pts</span>'
+            )
+        }
+        if (stats.todayPoints !== null && stats.todayPoints !== undefined && stats.todayPoints > 0) {
+            pills.push(
+                '<span class="acc-insight-pill today-points" title="Points earned today on Rewards">' +
+                '+' + formatPoints(stats.todayPoints) + ' today</span>'
+            )
+        }
         if (stats.streakDays !== null && stats.streakDays !== undefined) {
             pills.push('<span class="acc-insight-pill streak" title="Daily streak">' + stats.streakDays + 'd streak</span>')
         }
         if (stats.level) {
             pills.push('<span class="acc-insight-pill rank" title="Rewards level">' + escapeHtml(String(stats.level)) + '</span>')
         }
+        pills.push(formatLevelChangeHtml(stats.lastLevelChange))
         if (stats.dailySetTotal !== null && stats.dailySetTotal !== undefined) {
             const done = stats.dailySetCompleted ?? 0
             const total = stats.dailySetTotal
@@ -308,8 +347,26 @@
             )
         }
 
-        if (!pills.length) return ''
-        return '<div class="acc-preview-stats">' + pills.join('') + '</div>'
+        if (!pills.filter(Boolean).length) return ''
+        return '<div class="acc-preview-stats">' + pills.filter(Boolean).join('') + '</div>'
+    }
+
+    function formatRunStatsHtml(runStats) {
+        if (!runStats) return ''
+        const parts = []
+        if (runStats.collectedToday > 0) {
+            parts.push('+' + formatPoints(runStats.collectedToday) + ' farmed today')
+        }
+        if (runStats.lastRun?.durationSeconds) {
+            parts.push(formatDuration(runStats.lastRun.durationSeconds) + ' last run')
+        } else if (runStats.avgDurationSeconds) {
+            parts.push(formatDuration(runStats.avgDurationSeconds) + ' avg')
+        }
+        if (runStats.runsToday > 1) {
+            parts.push(runStats.runsToday + ' runs today')
+        }
+        if (!parts.length) return ''
+        return '<div class="acc-run-stats">' + parts.map(p => '<span>' + escapeHtml(p) + '</span>').join('') + '</div>'
     }
 
     function dashboardStatsForEmail(email) {
@@ -432,7 +489,7 @@
                 ? 'done'
                 : ''
             const avatar = accountAvatarColor(a.email)
-            const statsHtml = formatDashboardStatsHtml(a.dashboardStats)
+            const statsHtml = formatDashboardStatsHtml(a.dashboardStats) + formatRunStatsHtml(a.runStats)
             return (
                 '<div class="acc-preview" data-email="' + escapeHtml(a.email) + '">' +
                 '<div class="acc-avatar" style="background:' + avatar.bg + ';color:' + avatar.fg + '">' + escapeHtml(initials(a.email)) + '</div>' +
@@ -574,14 +631,18 @@
         container.innerHTML = data.runs.map(r => {
             const avatar = accountAvatarColor(r.email)
             const pts = r.collectedPoints ?? 0
+            const duration = r.durationSeconds ? formatDuration(r.durationSeconds) : ''
             const statsHtml = formatDashboardStatsHtml(dashboardStatsForEmail(r.email))
+            const metaParts = [r.success ? 'Completed successfully' : 'Run failed']
+            if (duration) metaParts.push(duration)
+            if (r.level) metaParts.push(r.level)
             return (
                 '<div class="run-row">' +
                 '<div class="run-row-avatar" style="background:' + avatar.bg + ';color:' + avatar.fg + '">' +
                 escapeHtml(initials(r.email)) + '</div>' +
                 '<div class="run-row-info">' +
                 '<div class="run-row-email">' + escapeHtml(maskEmail(r.email)) + '</div>' +
-                '<div class="run-row-meta">' + (r.success ? 'Completed successfully' : 'Run failed') + '</div>' +
+                '<div class="run-row-meta">' + escapeHtml(metaParts.join(' · ')) + '</div>' +
                 statsHtml +
                 '</div>' +
                 '<div class="run-row-points' + (r.success ? '' : ' fail') + '">' +
@@ -604,6 +665,7 @@
 
     const ICONS = {
         open: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>',
+        mobile: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg>',
         run: '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>',
         clear: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>',
         close: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>'
@@ -615,8 +677,12 @@
         const enabled = accountsCache.filter(a => a.enabled).length
         const pending = accountsCache.filter(a => a.enabled && !a.finishedToday).length
         const open = accountsCache.filter(a => a.sessionOpen).length
+        const pointsTotal = accountsCache.reduce((sum, a) => sum + (a.dashboardStats?.availablePoints ?? 0), 0)
+        const farmedToday = accountsCache.reduce((sum, a) => sum + (a.runStats?.collectedToday ?? 0), 0)
         let text = enabled + ' enabled · ' + pending + ' pending'
         if (open) text += ' · ' + open + ' browser' + (open === 1 ? '' : 's') + ' open'
+        if (pointsTotal > 0) text += ' · ' + formatPoints(pointsTotal) + ' pts saved'
+        if (farmedToday > 0) text += ' · +' + formatPoints(farmedToday) + ' farmed today'
         el.textContent = text
     }
     function filterAccounts(list) {
@@ -651,7 +717,9 @@
             ? 'done'
             : 'pending'
         const statusLabel = account.sessionOpen
-            ? 'Browser open'
+            ? account.sessionPlatform === 'mobile'
+                ? 'Mobile browser open'
+                : 'Desktop browser open'
             : account.searchIssue === 'stale_session'
             ? 'Clear session'
             : account.searchIssue === 'needs_sign_in'
@@ -678,6 +746,7 @@
             (account.searchIssue === 'stale_session' ? '<span class="warn-tag" style="background:rgba(239,68,68,.14);color:#fca5a5">Clear saved session &amp; sign in again</span>' : '') +
             (account.searchIssue === 'temp_banned' ? '<span class="warn-tag">Bing search restricted today</span>' : '') +
             formatDashboardStatsHtml(account.dashboardStats) +
+            formatRunStatsHtml(account.runStats) +
             '</div></div>' +
             '<div class="acc-locale">' +
             '<label class="locale-pill">Geo<input type="text" class="acc-geo" value="' + escapeHtml(account.geoLocale) + '" maxlength="4"></label>' +
@@ -693,7 +762,8 @@
                 ? '<button type="button" class="icon-btn close-session" title="Close browser">' + ICONS.close + ' Close</button>'
                 : account.searchIssue === 'needs_sign_in'
                 ? '<button type="button" class="icon-btn signin-bing" title="Open visible browser to sign in to Bing"' + (running ? ' disabled' : '') + '>' + ICONS.open + ' Sign in</button>'
-                : '<button type="button" class="icon-btn open" title="Open desktop session"' + (running ? ' disabled' : '') + '>' + ICONS.open + ' Open</button>') +
+                : '<button type="button" class="icon-btn open" title="Open desktop session"' + (running ? ' disabled' : '') + '>' + ICONS.open + ' Desktop</button>' +
+                  '<button type="button" class="icon-btn open-mobile" title="Open mobile session"' + (running ? ' disabled' : '') + '>' + ICONS.mobile + ' Mobile</button>') +
             '<button type="button" class="icon-btn run" title="Run this account"' + (running ? ' disabled' : '') + '>' + ICONS.run + ' Run</button>' +
             '<button type="button" class="icon-btn clear' + (account.searchIssue === 'stale_session' ? ' emphasis' : '') + '" title="Clear saved session">' + ICONS.clear + (account.searchIssue === 'stale_session' ? ' Clear' : '') + '</button>' +
             '</div>'
@@ -726,9 +796,20 @@
             try {
                 await api('/api/accounts/' + encodeURIComponent(account.email) + '/open', {
                     method: 'POST',
-                    body: JSON.stringify({ target: 'rewards' })
+                    body: JSON.stringify({ target: 'rewards', platform: 'desktop' })
                 })
-                showToast('Opening browser for ' + maskEmail(account.email), 'success')
+                showToast('Opening desktop browser for ' + maskEmail(account.email), 'success')
+                setTimeout(() => refreshAccounts().catch(() => {}), 800)
+            } catch (e) { showToast(e.message, 'error') }
+        })
+
+        row.querySelector('.icon-btn.open-mobile')?.addEventListener('click', async () => {
+            try {
+                await api('/api/accounts/' + encodeURIComponent(account.email) + '/open', {
+                    method: 'POST',
+                    body: JSON.stringify({ target: 'rewards', platform: 'mobile' })
+                })
+                showToast('Opening mobile browser for ' + maskEmail(account.email), 'success')
                 setTimeout(() => refreshAccounts().catch(() => {}), 800)
             } catch (e) { showToast(e.message, 'error') }
         })
@@ -737,7 +818,7 @@
             try {
                 await api('/api/accounts/' + encodeURIComponent(account.email) + '/open', {
                     method: 'POST',
-                    body: JSON.stringify({ target: 'bing' })
+                    body: JSON.stringify({ target: 'bing', platform: 'desktop' })
                 })
                 showToast('Opening Bing sign-in for ' + maskEmail(account.email), 'success')
                 setTimeout(() => refreshAccounts().catch(() => {}), 800)
@@ -785,6 +866,336 @@
         paintAccountsTable()
         paintDashboardAccounts()
         paintStaleSessionAlert(accountsCache.filter(a => a.searchIssue === 'stale_session').map(a => a.email))
+    }
+
+    let analyticsCache = null
+
+    function levelTone(level) {
+        const key = String(level || '').toLowerCase()
+        if (key.includes('gold')) return 'gold'
+        if (key.includes('silver')) return 'silver'
+        if (key.includes('level 2') || key === '2') return 'lvl2'
+        if (key.includes('level 1') || key === '1') return 'lvl1'
+        return 'unknown'
+    }
+
+    function shortDate(iso) {
+        if (!iso) return '—'
+        const d = new Date(iso + 'T12:00:00')
+        return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+    }
+
+    function renderBarChart(daily, key) {
+        if (!daily.length) {
+            return '<p class="analytics-empty">No harvest data yet — run your accounts to see trends.</p>'
+        }
+        const w = 640
+        const h = 200
+        const pad = { l: 36, r: 12, t: 16, b: 32 }
+        const innerW = w - pad.l - pad.r
+        const innerH = h - pad.t - pad.b
+        const max = Math.max(...daily.map(d => d[key] || 0), 1)
+        const barW = Math.max(4, Math.min(18, innerW / daily.length - 3))
+        const gap = (innerW - barW * daily.length) / Math.max(daily.length - 1, 1)
+
+        let bars = ''
+        daily.forEach((day, i) => {
+            const val = day[key] || 0
+            const barH = (val / max) * innerH
+            const x = pad.l + i * (barW + gap)
+            const y = pad.t + innerH - barH
+            const hot = val === max && val > 0
+            bars +=
+                '<rect class="analytics-bar' + (hot ? ' hot' : '') + '" x="' + x + '" y="' + y + '" width="' + barW + '" height="' + barH + '" rx="3">' +
+                '<title>' + escapeHtml(day.date) + ': ' + val.toLocaleString() + ' pts</title></rect>'
+        })
+
+        const ticks = [0, 0.5, 1].map(r => {
+            const y = pad.t + innerH * (1 - r)
+            const v = Math.round(max * r)
+            return '<line class="analytics-grid-line" x1="' + pad.l + '" y1="' + y + '" x2="' + (w - pad.r) + '" y2="' + y + '"/>' +
+                '<text class="analytics-axis" x="' + (pad.l - 6) + '" y="' + (y + 4) + '" text-anchor="end">' + v.toLocaleString() + '</text>'
+        }).join('')
+
+        const labels = daily.length <= 12
+            ? daily.map((day, i) => {
+                if (daily.length > 8 && i % 2 !== 0 && i !== daily.length - 1) return ''
+                const x = pad.l + i * (barW + gap) + barW / 2
+                return '<text class="analytics-axis" x="' + x + '" y="' + (h - 8) + '" text-anchor="middle">' + shortDate(day.date) + '</text>'
+            }).join('')
+            : '<text class="analytics-axis" x="' + (w / 2) + '" y="' + (h - 8) + '" text-anchor="middle">' +
+                shortDate(daily[0].date) + ' → ' + shortDate(daily[daily.length - 1].date) + '</text>'
+
+        return '<svg class="analytics-svg" viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="xMidYMid meet">' +
+            ticks + bars + labels + '</svg>'
+    }
+
+    function renderForecastChart(forecast) {
+        if (!forecast.length) {
+            return '<p class="analytics-empty">Forecast unlocks after a few days of runs.</p>'
+        }
+        const w = 720
+        const h = 240
+        const pad = { l: 44, r: 16, t: 18, b: 34 }
+        const innerW = w - pad.l - pad.r
+        const innerH = h - pad.t - pad.b
+        const actual = forecast.filter(p => p.cumulativeActual !== undefined)
+        const allCum = forecast.map(p => p.cumulativeForecast ?? p.cumulativeActual ?? 0)
+        const max = Math.max(...allCum, 1)
+        const n = forecast.length
+
+        function xAt(i) {
+            return pad.l + (i / Math.max(n - 1, 1)) * innerW
+        }
+        function yAt(v) {
+            return pad.t + innerH - (v / max) * innerH
+        }
+
+        let actualPath = ''
+        actual.forEach((p, i) => {
+            const idx = forecast.indexOf(p)
+            const cmd = i === 0 ? 'M' : 'L'
+            actualPath += cmd + xAt(idx) + ' ' + yAt(p.cumulativeActual) + ' '
+        })
+
+        const splitIdx = actual.length ? forecast.indexOf(actual[actual.length - 1]) : 0
+        let forecastPath = ''
+        forecast.slice(splitIdx).forEach((p, i) => {
+            const idx = splitIdx + i
+            const val = p.cumulativeForecast ?? p.cumulativeActual ?? 0
+            forecastPath += (i === 0 ? 'M' : 'L') + xAt(idx) + ' ' + yAt(val) + ' '
+        })
+
+        const areaPath = actualPath +
+            ' L' + xAt(splitIdx) + ' ' + (pad.t + innerH) +
+            ' L' + xAt(0) + ' ' + (pad.t + innerH) + ' Z'
+
+        const legend =
+            '<g class="analytics-legend">' +
+            '<line x1="' + (w - 190) + '" y1="14" x2="' + (w - 170) + '" y2="14" class="analytics-legend-line actual"/>' +
+            '<text x="' + (w - 164) + '" y="18">Actual</text>' +
+            '<line x1="' + (w - 100) + '" y1="14" x2="' + (w - 80) + '" y2="14" class="analytics-legend-line forecast"/>' +
+            '<text x="' + (w - 74) + '" y="18">Forecast</text></g>'
+
+        return '<svg class="analytics-svg tall" viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="xMidYMid meet">' +
+            '<path class="analytics-area" d="' + areaPath + '"/>' +
+            '<path class="analytics-line actual" d="' + actualPath + '"/>' +
+            '<path class="analytics-line forecast" d="' + forecastPath + '"/>' +
+            '<line class="analytics-split" x1="' + xAt(splitIdx) + '" y1="' + pad.t + '" x2="' + xAt(splitIdx) + '" y2="' + (pad.t + innerH) + '"/>' +
+            '<text class="analytics-axis" x="' + (pad.l - 8) + '" y="' + (pad.t + 4) + '" text-anchor="end">' + Math.round(max).toLocaleString() + '</text>' +
+            '<text class="analytics-axis" x="' + (pad.l - 8) + '" y="' + (pad.t + innerH) + '" text-anchor="end">0</text>' +
+            legend +
+            '</svg>'
+    }
+
+    function paintAnalyticsKpis(report) {
+        const grid = $('analytics-kpi-grid')
+        if (!grid) return
+        const s = report.summary
+        const goal = report.goal
+        const cards = [
+            {
+                label: 'Harvested (' + report.period.days + 'd)',
+                value: s.totalCollected.toLocaleString(),
+                hint: s.avgDailyCollected.toLocaleString() + ' pts/day average',
+                tone: 'success'
+            },
+            {
+                label: 'Projected month',
+                value: s.projectedMonthly.toLocaleString(),
+                hint: 'Based on last 7 active days',
+                tone: 'accent'
+            },
+            {
+                label: 'Accounts',
+                value: s.enabledAccounts,
+                hint: s.activeAccounts + ' ran in this period',
+                tone: ''
+            },
+            {
+                label: 'Wallet total',
+                value: s.totalAvailablePoints.toLocaleString(),
+                hint: 'Available points across farm',
+                tone: ''
+            }
+        ]
+        if (goal) {
+            cards.push({
+                label: 'At goal',
+                value: s.accountsAtGoal + ' / ' + s.enabledAccounts,
+                hint: (goal.pointsTarget.toLocaleString() + ' pts each in ' + report.period.days + 'd'),
+                tone: s.accountsAtGoal === s.enabledAccounts ? 'success' : ''
+            })
+            cards.push({
+                label: goal.label || 'Avg progress',
+                value: s.goalProgressPercent + '%',
+                hint: s.accountsOnTrack + ' on track · ~' + (s.avgPointsToGoal ?? 0).toLocaleString() + ' pts left avg',
+                tone: s.onTrackForGoal ? 'success' : 'warn'
+            })
+        }
+        grid.innerHTML = cards.map(card =>
+            '<article class="analytics-kpi' + (card.tone ? ' tone-' + card.tone : '') + '">' +
+            '<span class="analytics-kpi-label">' + escapeHtml(card.label) + '</span>' +
+            '<strong class="analytics-kpi-value">' + escapeHtml(card.value) + '</strong>' +
+            '<span class="analytics-kpi-hint">' + escapeHtml(card.hint) + '</span></article>'
+        ).join('')
+    }
+
+    function paintGoalRing(report) {
+        const ring = $('analytics-goal-ring')
+        const insight = $('analytics-goal-insight')
+        const caption = $('analytics-goal-caption')
+        if (!ring || !insight) return
+
+        const goal = report.goal
+        const s = report.summary
+        if (!goal) {
+            if (caption) caption.textContent = 'Set a per-account target above'
+            ring.innerHTML = '<div class="analytics-goal-empty"><span>?</span><p>No goal yet</p></div>'
+            insight.innerHTML = '<p>Set a <strong>per-account</strong> points target — for example <strong>6,500</strong> — to track each account toward the same goal.</p>'
+            return
+        }
+
+        const pct = Math.min(100, s.goalProgressPercent)
+        const r = 54
+        const c = 2 * Math.PI * r
+        const dash = (pct / 100) * c
+        if (caption) {
+            caption.textContent =
+                goal.label + ' · ' + goal.pointsTarget.toLocaleString() + ' pts per account'
+        }
+
+        ring.innerHTML =
+            '<svg class="analytics-ring-svg" viewBox="0 0 140 140">' +
+            '<circle class="analytics-ring-track" cx="70" cy="70" r="' + r + '"/>' +
+            '<circle class="analytics-ring-progress' + (s.onTrackForGoal ? ' on-track' : ' behind') + '" cx="70" cy="70" r="' + r + '" ' +
+            'transform="rotate(-90 70 70)" stroke-dasharray="' + dash + ' ' + c + '" stroke-dashoffset="0"/>' +
+            '<text class="analytics-ring-pct" x="70" y="64" text-anchor="middle">' + pct + '%</text>' +
+            '<text class="analytics-ring-sub" x="70" y="82" text-anchor="middle">avg per account</text>' +
+            '<text class="analytics-ring-sub" x="70" y="96" text-anchor="middle">' + s.accountsAtGoal + '/' + s.enabledAccounts + ' reached</text>' +
+            '</svg>'
+
+        let eta = 'Run accounts more to estimate when lagging ones hit the target.'
+        if (s.accountsAtGoal === s.enabledAccounts) {
+            eta = 'Every enabled account has hit <strong>' + goal.pointsTarget.toLocaleString() + '</strong> pts in this period.'
+        } else if (s.daysToGoal !== null && s.estimatedGoalDate) {
+            eta = 'Lagging accounts need about <strong>' + s.daysToGoal + ' day' + (s.daysToGoal === 1 ? '' : 's') + '</strong> at current pace (' + shortDate(s.estimatedGoalDate) + ').'
+        }
+        const track = s.onTrackForGoal === null
+            ? ''
+            : s.onTrackForGoal
+                ? '<span class="analytics-pill good">' + s.accountsOnTrack + ' on track</span>'
+                : '<span class="analytics-pill warn">' + (s.enabledAccounts - s.accountsOnTrack) + ' behind</span>'
+
+        insight.innerHTML =
+            track +
+            '<p>' + eta + '</p>' +
+            '<p class="analytics-muted">Farm total this period: <strong>' + s.totalCollected.toLocaleString() + '</strong> pts across all accounts.</p>'
+    }
+
+    function paintAnalyticsLevels(levels) {
+        const el = $('analytics-levels')
+        if (!el) return
+        if (!levels.length) {
+            el.innerHTML = '<p class="analytics-empty">Enable accounts and run dashboard info to map levels.</p>'
+            return
+        }
+        const max = Math.max(...levels.map(l => l.count), 1)
+        el.innerHTML = levels.map(bucket => {
+            const pct = Math.round((bucket.count / max) * 100)
+            return '<div class="analytics-level-row tone-' + levelTone(bucket.level) + '">' +
+                '<div class="analytics-level-head"><span class="analytics-level-name">' + escapeHtml(bucket.level) + '</span>' +
+                '<span class="analytics-level-count">' + bucket.count + '</span></div>' +
+                '<div class="analytics-level-bar"><span style="width:' + pct + '%"></span></div></div>'
+        }).join('')
+    }
+
+    function paintAnalyticsAccounts(report) {
+        const el = $('analytics-accounts')
+        const caption = $('analytics-accounts-caption')
+        if (!el) return
+        if (caption) {
+            caption.textContent = report.period.start + ' → ' + report.period.end + ' · ' + report.accounts.length + ' accounts'
+        }
+        if (!report.accounts.length) {
+            el.innerHTML = '<p class="analytics-empty">No accounts in this period.</p>'
+            return
+        }
+        const hasGoal = !!report.goal
+        el.innerHTML =
+            '<div class="analytics-account-head' + (hasGoal ? ' has-goal' : '') + '">' +
+            '<span>Account</span><span>Level</span><span>Harvested</span>' +
+            (hasGoal ? '<span>Goal</span>' : '') +
+            '<span>Share</span><span>Proj. month</span></div>' +
+            report.accounts.map((row, i) => {
+                const rank = i < 3 ? ' rank-' + (i + 1) : ''
+                const level = row.level
+                    ? '<span class="analytics-level-chip tone-' + levelTone(row.level) + '">' + escapeHtml(row.level) + '</span>'
+                    : '<span class="analytics-muted">—</span>'
+                let goalCell = ''
+                if (hasGoal) {
+                    const gp = row.goalProgressPercent ?? 0
+                    const reached = row.goalReached
+                    const onTrack = row.onTrackForGoal
+                    const goalClass = reached ? ' reached' : onTrack ? ' on-track' : ' behind'
+                    goalCell =
+                        '<span class="analytics-goal-cell' + goalClass + '">' +
+                        '<span class="analytics-share-bar goal"><i style="width:' + Math.min(100, gp) + '%"></i></span> ' +
+                        (reached ? 'Done' : gp + '%') +
+                        '</span>'
+                }
+                return '<div class="analytics-account-row' + rank + (hasGoal ? ' has-goal' : '') + '">' +
+                    '<span class="analytics-account-email" title="' + escapeHtml(row.email) + '">' + escapeHtml(row.email) + '</span>' +
+                    '<span>' + level + '</span>' +
+                    '<span class="analytics-account-pts">' + row.collected.toLocaleString() + '</span>' +
+                    (hasGoal ? '<span>' + goalCell + '</span>' : '') +
+                    '<span><span class="analytics-share-bar"><i style="width:' + Math.min(100, row.sharePercent) + '%"></i></span> ' + row.sharePercent + '%</span>' +
+                    '<span class="analytics-muted">' + row.projectedMonthly.toLocaleString() + '</span></div>'
+            }).join('')
+    }
+
+    function paintAnalytics(report) {
+        analyticsCache = report
+        const goal = report.goal
+        if ($('analytics-goal-label')) $('analytics-goal-label').value = goal?.label || ''
+        if ($('analytics-goal-points')) $('analytics-goal-points').value = goal?.pointsTarget ?? ''
+        if ($('analytics-goal-days')) $('analytics-goal-days').value = goal?.periodDays ?? 30
+
+        const dailyCap = $('analytics-daily-caption')
+        if (dailyCap) {
+            dailyCap.textContent = report.period.daysWithData + ' active days · ' + report.period.start + ' → ' + report.period.end
+        }
+
+        paintAnalyticsKpis(report)
+        const dailyChart = $('analytics-daily-chart')
+        if (dailyChart) dailyChart.innerHTML = renderBarChart(report.daily, 'collected')
+        paintGoalRing(report)
+        const forecastChart = $('analytics-forecast-chart')
+        if (forecastChart) forecastChart.innerHTML = renderForecastChart(report.forecast)
+        paintAnalyticsLevels(report.levels)
+        paintAnalyticsAccounts(report)
+    }
+
+    async function refreshAnalytics() {
+        const data = await api('/api/analytics')
+        paintAnalytics(data.analytics)
+    }
+
+    async function saveAnalyticsGoal(ev) {
+        if (ev) ev.preventDefault()
+        const pointsTarget = Number($('analytics-goal-points')?.value)
+        const periodDays = Number($('analytics-goal-days')?.value || 30)
+        const label = $('analytics-goal-label')?.value?.trim() || ''
+        if (!Number.isFinite(pointsTarget) || pointsTarget <= 0) {
+            showToast('Enter a positive points target', 'error')
+            return
+        }
+        const data = await api('/api/analytics/goal', {
+            method: 'PATCH',
+            body: JSON.stringify({ pointsTarget, periodDays, label })
+        })
+        paintAnalytics(data.analytics)
+        showToast('Goal saved', 'success')
     }
 
     function renderWorkerGroup(containerId, keys, workers) {
@@ -1242,7 +1653,12 @@
     }
 
     document.querySelectorAll('.nav-item').forEach(btn => {
-        btn.addEventListener('click', () => switchTab(btn.dataset.tab))
+        btn.addEventListener('click', () => {
+            switchTab(btn.dataset.tab)
+            if (btn.dataset.tab === 'analytics') {
+                refreshAnalytics().catch(e => showToast(e.message, 'error'))
+            }
+        })
     })
     document.querySelectorAll('[data-goto]').forEach(btn => {
         btn.addEventListener('click', () => switchTab(btn.dataset.goto))
@@ -1275,6 +1691,7 @@
         } catch (e) { showToast(e.message, 'error') }
     })
     $('btn-refresh-runs')?.addEventListener('click', () => refreshRunsToday().catch(e => showToast(e.message, 'error')))
+    $('analytics-goal-form')?.addEventListener('submit', e => saveAnalyticsGoal(e).catch(err => showToast(err.message, 'error')))
     $('quick-clusters')?.addEventListener('input', e => setQuickClusters(e.target.value))
     $('btn-quick-save')?.addEventListener('click', () => saveQuickSettings(false).catch(e => showToast(e.message, 'error')))
     $('btn-dash-apply')?.addEventListener('click', () => saveQuickSettings(true).catch(e => showToast(e.message, 'error')))
@@ -1399,6 +1816,9 @@
             refreshRunsToday().catch(() => {})
             if (document.querySelector('#tab-dashboard.active')) {
                 refreshAccounts().catch(() => {})
+            }
+            if (document.querySelector('#tab-analytics.active')) {
+                refreshAnalytics().catch(() => {})
             }
         }, 20000)
     }

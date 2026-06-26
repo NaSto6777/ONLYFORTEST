@@ -26,3 +26,24 @@ test('open-source premium fallbacks show concise Core hints', () => {
     assert.match(runner, /premiumHintsShown/)
     assert.match(taskBase, /Core unlocks full Daily Set coverage/)
 })
+
+test('fresh installs ship plugins.example.jsonc with Core disabled', () => {
+    const examplePath = path.join(root, 'plugins', 'plugins.example.jsonc')
+    assert.ok(fs.existsSync(examplePath), 'plugins/plugins.example.jsonc should be committed')
+
+    const raw = fs.readFileSync(examplePath, 'utf8')
+    const json = raw
+        .split('\n')
+        .map(line => (line.includes('//') ? line.slice(0, line.indexOf('//')) : line))
+        .join('\n')
+        .replace(/\/\*[\s\S]*?\*\//g, '')
+        .replace(/,(\s*[}\]])/g, '$1')
+
+    const config = JSON.parse(json)
+    assert.equal(config.core?.enabled, false)
+})
+
+test('PluginManager skips Core when plugins.jsonc is missing', () => {
+    const source = fs.readFileSync(path.join(root, 'src/core/PluginManager.ts'), 'utf8')
+    assert.match(source, /Core plugin skipped by default/)
+})

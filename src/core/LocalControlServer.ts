@@ -257,9 +257,10 @@ export class LocalControlServer {
                 if (req.method === 'POST' && pathname.endsWith('/open') && pathname.startsWith('/api/accounts/')) {
                     const email = pathname.slice('/api/accounts/'.length, -'/open'.length)
                     try {
-                        const body = (await readJsonBody(req)) as { target?: string }
+                        const body = (await readJsonBody(req)) as { target?: string; platform?: string }
                         const target = body.target === 'bing' ? 'bing' : 'rewards'
-                        await this.service.openDesktopSession(email, target)
+                        const platform = body.platform === 'mobile' ? 'mobile' : 'desktop'
+                        await this.service.openViewerSession(email, { platform, target })
                         return sendJson(res, 200, { ok: true })
                     } catch (error) {
                         return sendJson(res, 409, {
@@ -271,7 +272,7 @@ export class LocalControlServer {
                 if (req.method === 'DELETE' && pathname.endsWith('/open') && pathname.startsWith('/api/accounts/')) {
                     const email = pathname.slice('/api/accounts/'.length, -'/open'.length)
                     try {
-                        await this.service.closeDesktopSession(email)
+                        await this.service.closeViewerSession(email)
                         return sendJson(res, 200, { ok: true })
                     } catch (error) {
                         return sendJson(res, 409, {
@@ -350,6 +351,30 @@ export class LocalControlServer {
 
                 if (req.method === 'GET' && pathname === '/api/runs/today') {
                     return sendJson(res, 200, { runs: this.service.getRunsToday() })
+                }
+
+                if (req.method === 'GET' && pathname === '/api/analytics') {
+                    return sendJson(res, 200, { analytics: this.service.getAnalytics() })
+                }
+
+                if (req.method === 'PATCH' && pathname === '/api/analytics/goal') {
+                    const body = (await readJsonBody(req)) as {
+                        pointsTarget?: number
+                        periodDays?: number
+                        label?: string
+                    }
+                    try {
+                        const goal = this.service.setAnalyticsGoal({
+                            pointsTarget: Number(body.pointsTarget),
+                            periodDays: body.periodDays !== undefined ? Number(body.periodDays) : undefined,
+                            label: typeof body.label === 'string' ? body.label : undefined
+                        })
+                        return sendJson(res, 200, { goal, analytics: this.service.getAnalytics() })
+                    } catch (error) {
+                        return sendJson(res, 400, {
+                            error: error instanceof Error ? error.message : String(error)
+                        })
+                    }
                 }
             }
 

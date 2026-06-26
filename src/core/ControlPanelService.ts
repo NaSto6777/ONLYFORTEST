@@ -2,7 +2,7 @@ import type { Account } from '../types/Account'
 import type { Config, ConfigWorkers } from '../types/Config'
 import type { DashboardLog } from '../types/Dashboard'
 import type { MicrosoftRewardsBot } from '../index'
-import { getAccountsFinishedToday, getRunsToday } from '../helpers/AccountRunLedger'
+import { getAccountsFinishedToday, getAccountRunStatsToday, getRunsToday, type AccountRunEntry } from '../helpers/AccountRunLedger'
 import { getAccountDashboardSnapshots, type AccountDashboardSnapshot } from '../helpers/AccountDashboardSnapshotLedger'
 import {
     clearAllSessionData,
@@ -12,6 +12,7 @@ import {
     saveConfig
 } from '../helpers/ConfigLoader'
 import { clearAccountSearchIssues, getAccountSearchIssue, getAccountsWithStaleSessionToday } from '../helpers/AccountTempBanLedger'
+import { buildAnalyticsReport, saveAnalyticsGoal, type AnalyticsGoal, type AnalyticsReport } from '../helpers/AccountAnalyticsLedger'
 import { formatScheduledRun, getNextScheduledRun, isSchedulerEnabled } from './Scheduler'
 import type { ClusterRunProgress, ClusterWorkerStatus } from '../types/ClusterWorker'
 
@@ -25,9 +26,16 @@ export interface SanitizedAccount {
     hasTotp: boolean
     finishedToday: boolean
     sessionOpen: boolean
+    sessionPlatform: 'desktop' | 'mobile' | null
     searchIssue: 'none' | 'needs_sign_in' | 'temp_banned' | 'stale_session'
     searchIssueReason: string | null
     dashboardStats: AccountDashboardSnapshot | null
+    runStats: {
+        runsToday: number
+        collectedToday: number
+        avgDurationSeconds: number | null
+        lastRun: AccountRunEntry | null
+    }
     proxy: {
         proxyAxios: boolean
         url: string
@@ -137,7 +145,8 @@ export class ControlPanelService {
             this.sanitizeAccount(
                 account,
                 finishedToday.has(account.email.toLowerCase()),
-                dashboardSnapshots[account.email.toLowerCase()] ?? null
+                dashboardSnapshots[account.email.toLowerCase()] ?? null,
+                getAccountRunStatsToday(account.email)
             )
         )
     }
@@ -226,7 +235,8 @@ export class ControlPanelService {
         return this.sanitizeAccount(
             updated,
             finishedToday.has(updated.email.toLowerCase()),
-            dashboardSnapshots[updated.email.toLowerCase()] ?? null
+            dashboardSnapshots[updated.email.toLowerCase()] ?? null,
+            getAccountRunStatsToday(updated.email)
         )
     }
 
@@ -236,8 +246,8 @@ export class ControlPanelService {
             throw new Error(`Account not found: ${email}`)
         }
 
-        if (this.bot.isDesktopSessionOpen(email)) {
-            await this.bot.closeDesktopSession(email)
+        if (this.bot.isViewerSessionOpen(email)) {
+            await this.bot.closeViewerSession(email)
         }
 
         await clearAllSessionData(this.bot.config.sessionPath, email)
@@ -248,8 +258,33 @@ export class ControlPanelService {
         await this.bot.openDesktopSession(email, target)
     }
 
+    async openMobileSession(email: string, target: 'rewards' | 'bing' = 'rewards'): Promise<void> {
+        await this.bot.openMobileSession(email, target)
+    }
+
+    async openViewerSession(
+        email: string,
+        options: { platform?: 'desktop' | 'mobile'; target?: 'rewards' | 'bing' } = {}
+    ): Promise<void> {
+        const platform = options.platform === 'mobile' ? 'mobile' : 'desktop'
+        const target = options.target === 'bing' ? 'bing' : 'rewards'
+        if (platform === 'mobile') {
+            await this.bot.openMobileSession(email, target)
+            return
+        }
+        await this.bot.openDesktopSession(email, target)
+    }
+
     async closeDesktopSession(email: string): Promise<void> {
-        await this.bot.closeDesktopSession(email)
+        await this.bot.closeViewerSession(email, 'desktop')
+    }
+
+    async closeMobileSession(email: string): Promise<void> {
+        await this.bot.closeViewerSession(email, 'mobile')
+    }
+
+    async closeViewerSession(email: string): Promise<void> {
+        await this.bot.closeViewerSession(email)
     }
 
     getConfigSnapshot(): ControlPanelConfigSnapshot {
@@ -334,10 +369,22 @@ export class ControlPanelService {
         return getRunsToday()
     }
 
+    getAnalytics(): AnalyticsReport {
+        return buildAnalyticsReport()
+    }
+
+    setAnalyticsGoal(input: { pointsTarget: number; periodDays?: number; label?: string }): AnalyticsGoal {
+        if (!Number.isFinite(input.pointsTarget) || input.pointsTarget <= 0) {
+            throw new Error('Goal must be a positive number of points')
+        }
+        return saveAnalyticsGoal(input)
+    }
+
     private sanitizeAccount(
         account: Account,
         finishedToday: boolean,
-        dashboardStats: AccountDashboardSnapshot | null
+        dashboardStats: AccountDashboardSnapshot | null,
+        runStats = getAccountRunStatsToday(account.email)
     ): SanitizedAccount {
         return {
             email: account.email,
@@ -348,9 +395,16 @@ export class ControlPanelService {
             hasPassword: Boolean(account.password),
             hasTotp: Boolean(account.totpSecret),
             finishedToday,
-            sessionOpen: this.bot.isDesktopSessionOpen(account.email),
+            sessionOpen: this.bot.isViewerSessionOpen(account.email),
+            sessionPlatform: this.bot.getViewerSessionPlatform(account.email),
             ...this.searchIssueForAccount(account.email),
             dashboardStats,
+            runStats: {
+                runsToday: runStats.runs,
+                collectedToday: runStats.collectedPoints,
+                avgDurationSeconds: runStats.avgDurationSeconds,
+                lastRun: runStats.lastRun
+            },
             proxy: {
                 proxyAxios: account.proxy.proxyAxios,
                 url: account.proxy.url,

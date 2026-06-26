@@ -87,7 +87,7 @@ export class PluginManager {
 
         const { config: pluginConfig, hasFile: hasConfigFile } = this.loadPluginConfig()
 
-        const ignoredFiles = new Set(['README.md', 'plugins.jsonc', 'official-core.json', 'catalog.json'])
+        const ignoredFiles = new Set(['README.md', 'plugins.jsonc', 'plugins.example.jsonc', 'official-core.json', 'catalog.json'])
         const entries = fs
             .readdirSync(pluginsDir, { withFileTypes: true })
             .filter(entry => !entry.name.startsWith('.') && !ignoredFiles.has(entry.name))
@@ -107,6 +107,17 @@ export class PluginManager {
         for (const entry of entries) {
             const entryName = this.getPluginEntryName(entry)
             const entryConfig = pluginConfig[entryName]
+
+            if (!hasConfigFile && entryName === 'core') {
+                if (!cluster.isWorker) {
+                    this.bot.logger.info(
+                        'main',
+                        'PLUGIN-MANAGER',
+                        'Core plugin skipped by default (enable it in plugins/plugins.jsonc)'
+                    )
+                }
+                continue
+            }
 
             if (hasConfigFile) {
                 if (!entryConfig) {
