@@ -257,7 +257,7 @@ test('dependency sync chooses npm ci when package-lock is present', () => {
         childProcess.spawnSync = originalSpawnSync
     }
 
-    assert.deepEqual(capturedArgs, ['ci'])
+    assert.deepEqual(capturedArgs, ['ci', '--no-audit', '--no-fund'])
 })
 
 test('GitHub tarball download uses the GitHub API accept header', () => {

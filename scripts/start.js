@@ -5,7 +5,8 @@ const {
     renderStep,
     renderStepDone,
     renderStepFail,
-    renderLaunchHandoff
+    renderLaunchHandoff,
+    stopSpinnerAndLog
 } = require('./startupUi')
 const { runAutoUpdate } = require('./run-auto-update')
 
@@ -51,6 +52,7 @@ async function main() {
 
     renderStep('Checking for updates')
     try {
+        stopSpinnerAndLog('Checking for updates')
         const updateResult = await runAutoUpdate({ argv: process.argv })
         if (updateResult.status === 'updated') {
             renderStepDone(`Checking for updates (updated to v${updateResult.remote?.version ?? 'latest'})`)

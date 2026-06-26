@@ -94,6 +94,14 @@ function clearLine() {
     process.stdout.write('\r\x1b[K')
 }
 
+function stopSpinner() {
+    if (spinnerTimer) {
+        clearInterval(spinnerTimer)
+        spinnerTimer = null
+    }
+    clearLine()
+}
+
 function renderStep(label) {
     activeStep = label
     if (spinnerTimer) clearInterval(spinnerTimer)
@@ -106,12 +114,9 @@ function renderStep(label) {
     }, 90)
 }
 
-function stopSpinner() {
-    if (spinnerTimer) {
-        clearInterval(spinnerTimer)
-        spinnerTimer = null
-    }
-    clearLine()
+function stopSpinnerAndLog(label) {
+    stopSpinner()
+    console.log(`${paint('…', ansi.cyan)} ${paint(label, ansi.white)}`)
 }
 
 function renderStepDone(label, detail = 'done') {
@@ -146,5 +151,7 @@ module.exports = {
     renderStepDone,
     renderStepFail,
     renderStepSkip,
-    renderLaunchHandoff
+    renderLaunchHandoff,
+    stopSpinner,
+    stopSpinnerAndLog
 }

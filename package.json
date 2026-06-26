@@ -1,6 +1,6 @@
 {
     "name": "microsoft-rewards-bot",
-    "version": "1.0.3",
+    "version": "1.0.4",
     "description": "Source-available Microsoft Rewards automation with multi-account support, Docker deployment, plugin extensions, Discord webhooks, and optional proprietary Core features.",
     "author": "QuestPilot",
     "license": "UNLICENSED",

@@ -393,6 +393,7 @@ class UpdateManager {
             }
 
             this.assertCompatibleNode(remote.packageJson)
+            this.logger.log(`[UPDATER] Updating ${this.packageJson.version} -> ${remote.version}`)
             await this.applyRelease(remote, env)
             this.syncDependencies()
             this.logger.log(`[UPDATER] Updated to ${remote.version}`)
@@ -472,10 +473,13 @@ class UpdateManager {
         mkdirp(extractDir)
         mkdirp(backupDir)
 
+        this.logger.log('[UPDATER] Downloading update archive...')
         await this.downloadArchive(remote.archiveUrl, archivePath, env)
+        this.logger.log('[UPDATER] Extracting update archive...')
         this.extractArchive(archivePath, extractDir)
         const sourceRoot = findExtractedRoot(extractDir)
 
+        this.logger.log('[UPDATER] Applying update files...')
         try {
             this.applyFromSourceRoot(sourceRoot, backupDir)
             migrateUserFiles(this.root, this.logger)
@@ -487,7 +491,7 @@ class UpdateManager {
     }
 
     async downloadArchive(archiveUrl, archivePath, env = process.env) {
-        await download(archiveUrl, archivePath, 60_000, {
+        await download(archiveUrl, archivePath, 120_000, {
             accept: 'application/vnd.github+json',
             headers: this.getGithubHeaders(env)
         })
@@ -541,10 +545,29 @@ class UpdateManager {
     }
 
     syncDependencies() {
-        const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm'
-        const args = fs.existsSync(path.join(this.root, 'package-lock.json')) ? ['ci'] : ['install']
-        this.logger.log(`[UPDATER] Syncing dependencies with npm ${args.join(' ')}`)
-        const result = childProcess.spawnSync(npm, args, { cwd: this.root, stdio: 'inherit', shell: false })
+        const args = fs.existsSync(path.join(this.root, 'package-lock.json'))
+            ? ['ci', '--no-audit', '--no-fund']
+            : ['install', '--no-audit', '--no-fund']
+        this.logger.log(`[UPDATER] Syncing dependencies (npm ${args[0]})...`)
+
+        const spawnOptions = {
+            cwd: this.root,
+            stdio: 'inherit',
+            env: process.env
+        }
+
+        let result
+        if (process.env.npm_execpath) {
+            result = childProcess.spawnSync(process.execPath, [process.env.npm_execpath, ...args], {
+                ...spawnOptions,
+                shell: false
+            })
+        } else if (process.platform === 'win32') {
+            result = childProcess.spawnSync('npm', args, { ...spawnOptions, shell: true })
+        } else {
+            result = childProcess.spawnSync('npm', args, { ...spawnOptions, shell: false })
+        }
+
         if (result.error) throw new Error(`Dependency sync failed: ${result.error.message}`)
         if (result.status !== 0) throw new Error(`Dependency sync failed with exit code ${result.status}`)
     }
